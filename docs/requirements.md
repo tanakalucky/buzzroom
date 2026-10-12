@@ -30,15 +30,15 @@ PR の段階分割と進捗は [plan.md](plan.md) を参照。
 
 - ルームごとに 1 つの SQLite バックの Durable Object(RoomDO)が状態を保持する。
 - クライアントとの通信はルーム単位で 1 本の WebSocket。採点を含む完全な状態スナップショットを配信する(機能ごとに別ソケットを作らない)。
-- 早押しの到着判定はサーバ側の到着時刻が権威を持つ(クライアント時刻のずれを補正しない)。
+- 早押しの到着順は、RoomDO がリクエストを受信した順序を権威とする。クライアント側の押下時刻や、複数サーバ到着時刻の比較では判定しない。同着の補正も行わない。
 - 状態は配信前に永続化する。再接続・Durable Object の hibernation 後も状態を復元する。
 
 ## ディレクトリ構成と責務
 
-### 現在(公式 vinext Cloudflare スターターのまま、未変更)
+### 現在(公式 vinext Cloudflare スターターの構成のまま)
 
-- `app/` - ルーティングとページ(App Router)。`app/api/hello` はスターター付属の API ルート例。
-- `cloudflare.config.ts` / `vite.config.ts` / `next.config.ts` - ビルド・Worker 設定。
+- `app/` - ルーティングとページ(App Router)。`app/api/hello` はスターター付属の API ルート例。内容はスターターのままで、`oxfmt` によるフォーマット適用のみ行われている。
+- `cloudflare.config.ts` / `vite.config.ts` / `next.config.ts` - ビルド・Worker 設定。スターターのまま未変更。
 
 機能固有のコード(`src/features/*` 等)はまだ存在しない。下の「将来」は実装の合意事項であり、現状のディレクトリ構成ではない。
 
