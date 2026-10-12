@@ -22,7 +22,7 @@
 | `npm run build`     | Cloudflare Worker 向け build                                                                                               |
 | `npm run start`     | build 済み Worker のローカル preview                                                                                       |
 | `npm run deploy`    | Cloudflare Worker への deploy                                                                                              |
-| `npm run typegen`   | App Router のルート補助型を生成(`vinext typegen`)                                                                          |
+| `npm run typegen`   | Cloudflare Worker の Env/binding 型(`cf workers types`)と App Router のルート補助型(`vinext typegen`)を生成                |
 | `npm run typecheck` | `tsc --noEmit` による型チェック                                                                                            |
 | `npm run lint`      | oxlint によるチェック                                                                                                      |
 | `npm run fmt:check` | oxfmt によるフォーマット確認                                                                                               |

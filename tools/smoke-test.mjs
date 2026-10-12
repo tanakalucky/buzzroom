@@ -1,35 +1,79 @@
 import { spawn } from "node:child_process";
+import { createServer } from "node:net";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const PORT = 48173;
-const BASE_URL = `http://127.0.0.1:${PORT}`;
+const ROOT_DIR = fileURLToPath(new URL("..", import.meta.url));
+const VITE_BIN = fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url));
 const READY_TIMEOUT_MS = 30_000;
 
 test("built worker serves the starter homepage and /api/hello", async () => {
-  const preview = spawn("npm", ["run", "start", "--", "--port", String(PORT), "--strictPort"], {
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const port = await getFreePort();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const preview = spawnVitePreview(port);
 
   try {
-    await waitUntilReady(preview);
+    await waitUntilReady(preview, baseUrl);
 
-    const home = await fetch(BASE_URL);
+    const home = await fetch(baseUrl);
     assert.equal(home.status, 200);
     const homeHtml = await home.text();
     assert.match(homeHtml, /Build Next\.js-style apps with Vite and deploy them to the edge\./);
 
-    const hello = await fetch(`${BASE_URL}/api/hello`);
+    const hello = await fetch(`${baseUrl}/api/hello`);
     assert.equal(hello.status, 200);
     assert.deepEqual(await hello.json(), {
       message: "Hello from vinext on Cloudflare Workers",
     });
   } finally {
-    preview.kill();
+    await stopProcess(preview);
   }
 });
 
-function waitUntilReady(preview) {
+test("preview refuses to start on an already-occupied port", async () => {
+  const occupied = createServer();
+  const port = await new Promise((resolve, reject) => {
+    occupied.once("error", reject);
+    occupied.listen(0, "127.0.0.1", () => resolve(occupied.address().port));
+  });
+
+  try {
+    const preview = spawnVitePreview(port);
+    const exitCode = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(`expected early exit on occupied port ${port}, but process kept running`));
+      }, READY_TIMEOUT_MS);
+      preview.once("exit", (code) => {
+        clearTimeout(timer);
+        resolve(code);
+      });
+    });
+    assert.notEqual(exitCode, 0);
+  } finally {
+    await new Promise((resolve) => occupied.close(resolve));
+  }
+});
+
+function spawnVitePreview(port) {
+  return spawn(process.execPath, [VITE_BIN, "preview", "--port", String(port), "--strictPort"], {
+    cwd: ROOT_DIR,
+    stdio: "ignore",
+  });
+}
+
+function getFreePort() {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
+}
+
+function waitUntilReady(preview, baseUrl) {
   return new Promise((resolve, reject) => {
     let settled = false;
 
@@ -51,7 +95,7 @@ function waitUntilReady(preview) {
     (async () => {
       while (!settled) {
         try {
-          await fetch(BASE_URL);
+          await fetch(baseUrl);
           settle(resolve);
           return;
         } catch {
@@ -59,5 +103,13 @@ function waitUntilReady(preview) {
         }
       }
     })();
+  });
+}
+
+function stopProcess(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
+  return new Promise((resolve) => {
+    child.once("exit", resolve);
+    child.kill();
   });
 }
