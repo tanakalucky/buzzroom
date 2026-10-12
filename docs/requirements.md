@@ -37,8 +37,9 @@ PR の段階分割と進捗は [plan.md](plan.md) を参照。
 
 ### 現在(公式 vinext Cloudflare スターターの構成のまま)
 
-- `app/` - ルーティングとページ(App Router)。`app/api/hello` はスターター付属の API ルート例。内容はスターターのままで、`oxfmt` によるフォーマット適用のみ行われている。
-- `cloudflare.config.ts` / `vite.config.ts` / `next.config.ts` - ビルド・Worker 設定。スターターのまま未変更。
+- `app/` - ルーティングとページ(App Router)。`app/api/hello` はスターター付属の API ルート例。内容はスターターのままで、`oxfmt` によるフォーマット適用と npm コマンドへの表記修正のみ行われている。
+- `vite.config.ts` / `next.config.ts` - ビルド設定。スターターのまま未変更。
+- `cloudflare.config.ts` - Worker 設定。本番公開ドメイン(`domains` / `workersDev: false`)を preview(`isPreview`)と production で分岐させる変更済み。他はスターターのまま。
 
 機能固有のコード(`src/features/*` 等)はまだ存在しない。下の「将来」は実装の合意事項であり、現状のディレクトリ構成ではない。
 
