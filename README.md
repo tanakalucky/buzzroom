@@ -2,6 +2,8 @@
 
 パスワード制のルームでクイズの早押し(バズ)と採点を行う Web アプリ。[vinext](https://github.com/cloudflare/vinext) + Cloudflare Workers で動く。
 
+現時点のコードは starter + 基盤整備のみで、クイズ機能そのものは計画段階([docs/plan.md](docs/plan.md) 参照)。
+
 ## セットアップ
 
 ```sh

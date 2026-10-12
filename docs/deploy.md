@@ -18,7 +18,7 @@
 ## 未決事項(現時点でこのリポジトリが答えを持たない)
 
 - **本番の公開先が未決定**: `cloudflare.config.ts` にはまだ custom domain を設定していない。スターターのまま `workersDev` 等の本番公開設定も未決定で、ドメインを先取りして決めない。決まったら `cloudflare.config.ts` の `isPreview` 分岐に反映する(参考: [dev-tools の `cloudflare.config.ts` の例](https://github.com/tanakalucky/dev-tools/blob/ad2ed4c1013135c90c2346970d95d291e9def7ce/cloudflare.config.ts) のような preview/production の出し分け)。
-- **実際の deploy の blocker は repository secret の未登録**: このリポジトリの外(GitHub の repository secrets 設定)で `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を登録するまで、`deploy-production` と Preview の deploy・削除は(secret が空のまま Cloudflare CLI を呼ばないよう各 job 内で guard した上で)失敗する。登録作業はこのタスクの範囲外。
+- **実際の deploy の blocker は repository secret の未登録**: このリポジトリの外(GitHub の repository secrets 設定)で `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を登録するまで、`deploy-production` と Preview の deploy・削除は失敗する。登録作業はこのタスクの範囲外。
 - 上記が解決するまで、`ci.yml` の `deploy-production` と `preview-deploy.yml` / `preview-cleanup.yml` は定義のみで、実際の deploy は確認できていない。
 
 ## 参考: Worker Preview と Durable Object(将来の RoomDO 実装時向けメモ)

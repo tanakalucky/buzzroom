@@ -47,8 +47,6 @@ jobs:
           WRANGLER_SEND_METRICS: "false"
           WRANGLER_HIDE_BANNER: "true"
         run: |
-          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_API_TOKEN repository secret}"
-          : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID repository secret}"
           cd "$WRANGLER_DIR"
           set +e
           output="$(npx --no-install wrangler preview delete --worker-name buzzroom --name="$PREVIEW_NAME" --skip-confirmation 2>&1)"
