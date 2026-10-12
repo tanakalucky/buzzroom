@@ -1,89 +1,43 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このリポジトリで作業する Claude Code エージェント向けのローカルルール。
 
-## 言語設定
+## 言語
 
-Claude Codeはこのリポジトリで作業する際、**日本語で回答**してください。
+ユーザーとのやり取り・コミットメッセージ・ドキュメントは日本語で書く。
 
-## Project Architecture
+## 仕様とドキュメント
 
-This is a full-stack React application that runs on Cloudflare Workers, combining:
-- **Frontend**: React 19 + Vite with Tailwind CSS
-- **Backend**: Hono.js framework running on Cloudflare Workers
-- **Routing**: Wouter for client-side routing
-- **State Management**: TanStack Query for server state
-- **Styling**: Tailwind CSS v4 with CSS variables
+- 機能の境界と要求仕様は [docs/requirements.md](docs/requirements.md) と `docs/features/*.md`(room・buzzer・score)が正本。実装前に該当する doc を確認する。
+- 進め方の区切りと進捗は [docs/plan.md](docs/plan.md) を参照する。
+- 挙動・仕様を変える変更は、同じ PR で対応する doc(`docs/requirements.md` / `docs/features/*.md` / `docs/plan.md`)も更新する。doc だけを直す変更(typo 修正等)はこの逆を要求しない。
 
-### Key Structure
-- `src/react-app/` - React frontend application
-- `src/worker/` - Hono backend API running on Cloudflare Workers
-- `src/lib/` - Shared utilities
+## npm コマンド
 
-### Dual Environment Setup
-The app runs as both a traditional SPA and a Cloudflare Worker:
-- Frontend assets are served from `/dist/client`
-- API routes are handled by the Hono worker at `/api/*`
-- Single-page application routing is configured for client-side navigation
+`package.json` の `scripts` が正本。
 
-## Development Commands
+| コマンド            | 用途                                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`       | ローカル開発サーバの起動                                                                                                   |
+| `npm run build`     | Cloudflare Worker 向け build                                                                                               |
+| `npm run start`     | build 済み Worker のローカル preview                                                                                       |
+| `npm run deploy`    | Cloudflare Worker への deploy                                                                                              |
+| `npm run typegen`   | Cloudflare Worker の Env/binding 型(`cf workers types`)と App Router のルート補助型(`vinext typegen`)を生成                |
+| `npm run typecheck` | `tsc --noEmit` による型チェック                                                                                            |
+| `npm run lint`      | oxlint によるチェック                                                                                                      |
+| `npm run fmt:check` | oxfmt によるフォーマット確認                                                                                               |
+| `npm run format`    | oxfmt によるフォーマット適用                                                                                               |
+| `npm test`          | build 済み Worker を preview し、ホームページと `/api/hello` の実応答を確認するスモークテスト(先に `npm run build` が必要) |
 
-```bash
-# Install dependencies
-npm install
+## main・リリース
 
-# Start development server (frontend + worker)
-npm run dev
+- `main` ブランチへの直接の変更はしない。変更は PR 経由で行う。
+- このエージェントが PR の merge・deploy を実行することはない(承認・実行はユーザー/コーディネーターが行う)。
 
-# Build for production
-npm run build
+## レビューの前提
 
-# Preview production build locally
-npm run preview
+`/review` とそこから呼ばれる `review-correctness` / `review-design` / `review-tests` skill を使うレビューは、このリポジトリでは次を前提にする。
 
-# Deploy to Cloudflare Workers
-npm run deploy
-
-# Type checking and build validation
-npm run check
-
-# Generate Cloudflare Worker types
-npm run cf-typegen
-```
-
-## Code Quality & Formatting
-
-Uses Biome for linting and formatting:
-```bash
-# Lint and auto-fix
-npm run lint
-
-# Format code
-npm run format
-
-# Check and fix everything
-npm run biome-check
-```
-
-Pre-commit hooks via lefthook automatically run Biome checks on staged files.
-
-## Styling Guidelines
-
-- Uses Tailwind CSS v4 (not v3) with the new Vite plugin
-- Path alias `@/` maps to `src/`
-
-## Worker Configuration
-
-- Entry point: `src/worker/index.ts`
-- Compatibility date: 2025-04-01
-- Node.js compatibility enabled
-- Assets served from `dist/client` with SPA routing
-- Observability and source maps enabled
-
-## TypeScript Configuration
-
-Multiple tsconfig files for different contexts:
-- `tsconfig.json` - Base configuration
-- `tsconfig.app.json` - React app specific
-- `tsconfig.worker.json` - Worker specific
-- `tsconfig.node.json` - Node.js tooling
+- `review-correctness`: 実装と `docs/requirements.md` / `docs/features/*.md` の内容が矛盾していないか、挙動・仕様を変えた変更で対応する doc の更新が漏れていないかを確認する。
+- `review-design`: コードおよび doc の明確さ・構成の重複を確認する。
+- doc のみの変更は、それだけを理由に対応するコードのテストを機械的に要求しない(doc とコードの不整合チェックは `review-correctness` が行う)。

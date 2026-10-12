@@ -1,0 +1,63 @@
+# Worker Preview の片付け。作成・更新は preview-deploy が行い、ここでは削除だけを行う。
+# pull_request_target で動くため、base 側のコードを使い、PR のコードは実行しない。
+name: preview-cleanup
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
+
+jobs:
+  cleanup:
+    # fork の PR は対象外。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: wrangler 4.149.0 のインストール
+        run: |
+          wrangler_dir="$RUNNER_TEMP/preview-cleanup"
+          mkdir -p "$wrangler_dir"
+          cd "$wrangler_dir"
+          npm init -y
+          npm install wrangler@4.149.0
+          echo "WRANGLER_DIR=$wrangler_dir" >> "$GITHUB_ENV"
+
+      - name: Preview の削除
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+          WRANGLER_HIDE_BANNER: "true"
+        run: |
+          cd "$WRANGLER_DIR"
+          set +e
+          output="$(npx --no-install wrangler preview delete --worker-name buzzroom --name="$PREVIEW_NAME" --skip-confirmation 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+
+          if [ "$status" -ne 0 ]; then
+            if printf '%s\n' "$output" | grep -Eq '\[code: 10025\][[:space:]]*$'; then
+              echo "Preview が存在しないため、片付け済みとして扱います"
+              exit 0
+            fi
+            exit "$status"
+          fi
