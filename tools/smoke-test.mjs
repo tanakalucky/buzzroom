@@ -38,8 +38,8 @@ test("preview refuses to start on an already-occupied port", async () => {
     occupied.listen(0, "127.0.0.1", () => resolve(occupied.address().port));
   });
 
+  const preview = spawnVitePreview(port);
   try {
-    const preview = spawnVitePreview(port);
     const exitCode = await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`expected early exit on occupied port ${port}, but process kept running`));
@@ -51,15 +51,20 @@ test("preview refuses to start on an already-occupied port", async () => {
     });
     assert.notEqual(exitCode, 0);
   } finally {
+    await stopProcess(preview);
     await new Promise((resolve) => occupied.close(resolve));
   }
 });
 
 function spawnVitePreview(port) {
-  return spawn(process.execPath, [VITE_BIN, "preview", "--port", String(port), "--strictPort"], {
-    cwd: ROOT_DIR,
-    stdio: "ignore",
-  });
+  return spawn(
+    process.execPath,
+    [VITE_BIN, "preview", "--port", String(port), "--strictPort", "--host", "127.0.0.1"],
+    {
+      cwd: ROOT_DIR,
+      stdio: "inherit",
+    },
+  );
 }
 
 function getFreePort() {
