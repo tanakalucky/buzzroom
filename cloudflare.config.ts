@@ -1,6 +1,6 @@
 import { bindings, defineConfig, defineWorker } from "cf/config";
 
-export default defineConfig({
+export default defineConfig(({ isPreview }) => ({
   worker: defineWorker({
     name: "buzzroom",
     entrypoint: "vinext/server/fetch-handler",
@@ -10,5 +10,11 @@ export default defineConfig({
     env: {
       ASSETS: bindings.assets(),
     },
+    ...(isPreview
+      ? {}
+      : {
+          domains: ["buzzroom.tanakalucky.com"],
+          workersDev: false,
+        }),
   }),
-});
+}));

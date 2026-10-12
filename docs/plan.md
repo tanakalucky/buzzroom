@@ -7,14 +7,14 @@ PR を小さく分割するための区切りと、それぞれの受け入れ�
 
 - [x] A. ドキュメントとレビュールール(本ファイル・requirements・features/*・CLAUDE.md)
 - [x] B. 品質チェックとスモークテストの tooling
-- [x] C. CI/CD(GitHub Actions)。本番 deploy と Preview の secret 登録は未完了([deploy.md](deploy.md) の未決事項を参照)。
+- [x] C. CI/CD(GitHub Actions)のワークフロー結線と、本番公開先ドメインを含む `cloudflare.config.ts` の設定。repository Actions secret の名前(`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`)は登録済みだが、実際の権限での動作と hosted な Preview・本番 deploy の受け入れ確認は未完了([deploy.md](deploy.md) の未決事項を参照)。
 - [ ] D. room: 作成・参加・参加者一覧(パスワード・ニックネーム)を RoomDO + 単一 WebSocket のスナップショット配信 + UI まで一貫して実装(同一ブラウザでの参加者識別の再接続復元を含む)
 - [ ] E. buzzer: キュー・解答権(誤答ブロック・正解時の自動ラウンドリセット・host の手動リセット)と correctcount・wrongcount の自動加算を RoomDO への永続化 + UI まで一貫して実装(今ラウンドの誤答ブロック状態の再接続・hibernation 復元を含む)
 - [ ] F. host による採点カウンタの手動編集、quizmaster 譲渡、quizmaster 切断時の復帰待ちを RoomDO + UI まで一貫して実装
 
 各スライスは「ブラウザ UI だけ」「サーバだけ」に分けず、該当する doc([requirements.md](requirements.md) の該当範囲・対応する `features/*.md`)の挙動をエンドツーエンドで満たす PR 単位にする。再接続・hibernation 後の状態復元の回帰確認は、独立したスライスにせず D・E それぞれの受け入れ確認に含める。
 
-PR ごとの Worker Preview 上での動作確認も各スライスの受け入れ基準に含める。ただし secret 未登録の間は Preview の作成・削除自体の成否を確認できないため([deploy.md](deploy.md) 参照)、それが解消するまで進捗チェックはワークフロー結線・ローカルでの動作確認の完了を指し、hosted な Preview 上での受け入れ確認の完了は意味しない。
+PR ごとの Worker Preview 上での動作確認も各スライスの受け入れ基準に含める。ただし repository Actions secret の実際の権限・hosted な Preview の作成・削除の成否は PR 経由の Actions 実行でまだ検証できていないため([deploy.md](deploy.md) 参照)、それが確認できるまで進捗チェックはワークフロー結線・ローカルでの動作確認の完了を指し、hosted な Preview 上での受け入れ確認の完了は意味しない。
 
 ## 各スライスの受け入れ確認
 
