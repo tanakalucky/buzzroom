@@ -31,4 +31,5 @@ npm run dev
 - [docs/requirements.md](docs/requirements.md) - 全体スコープ・非目標・ディレクトリ構成
 - [docs/features/room.md](docs/features/room.md) / [buzzer.md](docs/features/buzzer.md) / [score.md](docs/features/score.md) - 機能ごとの仕様
 - [docs/plan.md](docs/plan.md) - PR の段階分割と進捗
+- [docs/deploy.md](docs/deploy.md) - CI/CD の構成・必要な secret・未決事項
 - [CLAUDE.md](CLAUDE.md) - このリポジトリで作業する際のローカルルール

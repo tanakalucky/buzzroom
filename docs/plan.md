@@ -6,8 +6,8 @@ PR を小さく分割するための区切りと、それぞれの受け入れ�
 ## 進捗
 
 - [x] A. ドキュメントとレビュールール(本ファイル・requirements・features/*・CLAUDE.md)
-- [ ] B. 品質チェックとスモークテストの tooling
-- [ ] C. CI/CD(GitHub Actions)
+- [x] B. 品質チェックとスモークテストの tooling
+- [x] C. CI/CD(GitHub Actions)。本番 deploy と Preview の secret 登録は未完了([deploy.md](deploy.md) の未決事項を参照)。
 - [ ] D. room: 作成・参加(パスワード・ニックネーム)の UI(ローカル状態のみ、サーバ未接続)
 - [ ] E. server: RoomDO の骨格(SQLite 永続化・WebSocket 1 本・状態スナップショット配信)
 - [ ] F. buzzer: キュー・解答権・ラウンドリセットの結線
