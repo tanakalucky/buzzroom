@@ -2,7 +2,19 @@
   "name": "buzzroom",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "npm@11.17.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "start": "vite preview",
+    "deploy": "vinext-cloudflare deploy",
+    "typegen": "vinext typegen",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "test": "node --test tools/smoke-test.mjs"
+  },
   "dependencies": {
     "@vinext/cloudflare": "^1.1.0",
     "react": "latest",
@@ -19,15 +31,11 @@
     "@vitejs/plugin-react": "^6.1.2",
     "@vitejs/plugin-rsc": "^0.5.36",
     "cf": "^1.0.0-beta.14",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
     "tailwindcss": "latest",
     "typescript": "latest",
     "vite": "^8.3.0"
   },
-  "type": "module",
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "start": "vite preview",
-    "deploy": "vinext-cloudflare deploy"
-  }
+  "packageManager": "npm@11.17.0"
 }

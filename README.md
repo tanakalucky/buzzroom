@@ -13,12 +13,18 @@ npm run dev
 
 ## スクリプト
 
-| コマンド         | 用途                                  |
-| ---------------- | ------------------------------------- |
-| `npm run dev`    | ローカル開発サーバの起動              |
-| `npm run build`  | Cloudflare Worker 向け build          |
-| `npm run start`  | build 済み Worker のローカル preview  |
-| `npm run deploy` | Cloudflare Worker への deploy         |
+| コマンド            | 用途                                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`       | ローカル開発サーバの起動                                                                                                   |
+| `npm run build`     | Cloudflare Worker 向け build                                                                                               |
+| `npm run start`     | build 済み Worker のローカル preview                                                                                       |
+| `npm run deploy`    | Cloudflare Worker への deploy                                                                                              |
+| `npm run typegen`   | App Router のルート補助型を生成(`vinext typegen`)                                                                          |
+| `npm run typecheck` | `tsc --noEmit` による型チェック                                                                                            |
+| `npm run lint`      | oxlint によるチェック                                                                                                      |
+| `npm run fmt:check` | oxfmt によるフォーマット確認                                                                                               |
+| `npm run format`    | oxfmt によるフォーマット適用                                                                                               |
+| `npm test`          | build 済み Worker を preview し、ホームページと `/api/hello` の実応答を確認するスモークテスト(先に `npm run build` が必要) |
 
 ## ドキュメント
 
