@@ -24,10 +24,10 @@
 ## 未決事項
 
 - 上記 secret の値・権限が実際に deploy・Preview の作成・削除に十分かは未検証。main への push・PR の Actions 実行で初めて確認できる。
-- `main` への実際の push・merge・deploy は、このドキュメントの更新時点ではまだ行っていない。ユーザー/コーディネーターの承認を経て PR を merge した後、`main` への push をトリガーに `deploy-production` job が実行されたときに初めて本番公開が成立する。
+- 現在のmainにはPR #1のmerge commit `75e0a80` がある。既存本番は `https://buzzroom.tanakalucky.com/`。このローカル機能実装ではActionsの本番成功SHA・Preview作成削除の証跡を新たに取得しておらず、今回の変更のpush・PR・deployも実行していない。承認後のPR/Previewと、mainへのmerge後の本番確認を分けて記録する。
 
 ## 参考: Worker Preview と Durable Object(将来の RoomDO 実装時向けメモ)
 
-RoomDO はこのリポジトリではまだ実装していない(将来実装、[requirements.md](requirements.md) 参照)。実装時のために記録しておく参考情報。
+RoomDOは同Worker内にSQLite-backedとして実装し、ローカルで検証した。hosted Previewでの検証は未実施([implementation-decisions.md](implementation-decisions.md)参照)。
 
 同一 Worker 内で `script_name` を指定せずに定義した Durable Object クラスは、Worker Preview ごとに自動で独立した namespace・storage を持つ(Preview 間は分離され、state は同じ Preview 内でのみ存続し、Preview を削除すると state も削除される)。これは Worker Preview の話で、本番 Worker の version URL の話ではない。出典: [Cloudflare Docs - Durable Objects in Worker Previews](https://developers.cloudflare.com/workers/previews/resources/#durable-objects)。現時点では DO の設定そのものは追加しない。

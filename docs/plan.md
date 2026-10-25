@@ -18,6 +18,8 @@ PR ごとの Worker Preview 上での動作確認も各スライスの受け入�
 
 ## 各スライスの受け入れ確認
 
+RoomDO・24時間固定Cookie・Server Actions・WebSocket・早押しと採点・司会交代をローカル実装。生成フォームとビルド済みworkerdの実通信テストを追加。D/E/Fはhosted Previewでの受け入れが未完了のためチェックを残す。[実装と検証記録](implementation-decisions.md) を参照。
+
 - **B**: `npm run lint` `npm run fmt:check` `npm run typecheck` `npm test` がいずれもローカルで実行でき、ビルド済み starter のホームページと `/api/hello` の応答をスモークテストが検証する。
 - **C**: PR と main への push で CI が通る。PR では Worker Preview が作成され、PR を閉じると削除される。main への push では検証が通った場合のみ本番 deploy job が実行される(実際の deploy 成功は Cloudflare 側の secret 設定に依存)。
 - **D**: ブラウザでルーム作成フォームからパスワードを設定して作成でき、ニックネームで参加できる。招待 URL にパスワードなしでアクセスした場合は参加できないことを手動で確認できる。複数クライアントの参加者一覧が単一 WebSocket のスナップショット配信で揃うこと、同じブラウザで再読み込みしてもニックネームでの識別が復元されることを確認できる。
