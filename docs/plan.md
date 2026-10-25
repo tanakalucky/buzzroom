@@ -7,18 +7,18 @@ PR を小さく分割するための区切りと、それぞれの受け入れ�
 
 - [x] A. ドキュメントとレビュールール(本ファイル・requirements・features/*・CLAUDE.md)
 - [x] B. 品質チェックとスモークテストの tooling
-- [x] C. CI/CD(GitHub Actions)のワークフロー結線と、本番公開先ドメインを含む `cloudflare.config.ts` の設定。repository Actions secret の名前(`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`)は登録済みだが、PR #2のCI・Preview deploy成功、PR #1後の本番deploy成功ログを確認済み。今回の本番反映・Preview削除は行っていない([deploy.md](deploy.md) の未決事項を参照)。
-- [x] D. room: 作成・参加・参加者一覧(パスワード・ニックネーム)を RoomDO + 単一 WebSocket のスナップショット配信 + UI まで一貫して実装(同一ブラウザでの参加者識別の再接続復元を含む)
+- [x] C. CI/CD(GitHub Actions)のワークフロー結線と、本番公開先ドメインを含む `cloudflare.config.ts` の設定。repository Actions secret の名前(`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`)は登録済み。PR #2のCI・Preview deploy成功、PR #1後の本番deploy成功ログを確認済み。今回の本番反映・Preview削除は行っていない([deploy.md](deploy.md) の未決事項を参照)。
+- [ ] D. room: 作成・参加・参加者一覧(パスワード・ニックネーム)を RoomDO + 単一 WebSocket のスナップショット配信 + UI まで一貫して実装(同一ブラウザでの参加者識別の再接続復元を含む)
 - [ ] E. buzzer: キュー・解答権(誤答ブロック・正解時の自動ラウンドリセット・host の手動リセット)と correctcount・wrongcount の自動加算を RoomDO への永続化 + UI まで一貫して実装(今ラウンドの誤答ブロック状態の再接続・hibernation 復元を含む)
 - [x] F. host による採点カウンタの手動編集、quizmaster 譲渡、quizmaster 切断時の復帰待ちを RoomDO + UI まで一貫して実装
 
 各スライスは「ブラウザ UI だけ」「サーバだけ」に分けず、該当する doc([requirements.md](requirements.md) の該当範囲・対応する `features/*.md`)の挙動をエンドツーエンドで満たす PR 単位にする。再接続・hibernation 後の状態復元の回帰確認は、独立したスライスにせず D・E それぞれの受け入れ確認に含める。
 
-PR ごとの Worker Preview 上での動作確認も各スライスの受け入れ基準に含める。ただし repository Actions secretでのPreview作成・更新は成功したが、今回の削除は実行していないため([deploy.md](deploy.md) 参照)、それが確認できるまで進捗チェックはワークフロー結線・ローカルでの動作確認の完了を指し、hosted な Preview 上での受け入れ確認の完了は意味しない。
+PR ごとの Worker Preview 上での動作確認も各スライスの受け入れ基準に含める。進捗チェックは各スライスの検証記録に従う。PR #2のPreview作成・更新と主要ゲーム操作は確認済みだが、Preview削除、Cookie属性のhosted直接観測、実hibernationの独立観測は未確認として分けて残す。
 
 ## 各スライスの受け入れ確認
 
-RoomDO・24時間固定Cookie・Server Actions・WebSocket・早押しと採点・司会交代をローカル実装。生成フォームとビルド済みworkerdの実通信テストを追加。Access認証後のhosted PreviewでD/Fの操作を確認。Eのゲーム操作も確認したが、実hibernationの独立観測は未実施のためチェックを残す。[Hosted検証記録](hosted-qa.md) に直接確認できていない項目も区別して記載する。[実装と検証記録](implementation-decisions.md) を参照。
+RoomDO・24時間固定Cookie・Server Actions・WebSocket・早押しと採点・司会交代をローカル実装。生成フォームとビルド済みworkerdの実通信テストを追加。Access認証後のhosted PreviewでD/E/Fの主要操作を確認。DのCookie属性のhosted直接観測、Eの実hibernationの独立観測は未実施のためチェックを残す。Fの操作は確認済み。[Hosted検証記録](hosted-qa.md) に直接確認できていない項目も区別して記載する。[実装と検証記録](implementation-decisions.md) を参照。
 
 - **B**: `npm run lint` `npm run fmt:check` `npm run typecheck` `npm test` がいずれもローカルで実行でき、ビルド済み starter のホームページと `/api/hello` の応答をスモークテストが検証する。
 - **C**: PR と main への push で CI が通る。PR では Worker Preview が作成され、PR を閉じると削除される。main への push では検証が通った場合のみ本番 deploy job が実行される(実際の deploy 成功は Cloudflare 側の secret 設定に依存)。
