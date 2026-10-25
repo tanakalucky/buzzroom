@@ -12,6 +12,8 @@ export default defineConfig(({ isPreview }) => ({
     assets: { notFoundHandling: "none" },
     env: {
       ASSETS: bindings.assets(),
+      QA_ENABLED: bindings.json(isPreview),
+      VERSION: bindings.versionMetadata(),
     },
     exports: { RoomDO: exports.durableObject({ storage: "sqlite" }) },
     ...(isPreview

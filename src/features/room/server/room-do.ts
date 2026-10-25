@@ -15,8 +15,14 @@ import {
   verifyPassword,
 } from "./security";
 
-type Session = { participantId: string; hash: string; expiresAt: number };
+type Session = {
+  participantId: string;
+  hash: string;
+  expiresAt: number;
+  qa?: { socketId: string; acceptedInstance: string };
+};
 export class RoomDO extends DurableObject {
+  private readonly qaInstance = crypto.randomUUID();
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     ctx.storage.sql.exec(
@@ -182,7 +188,12 @@ export class RoomDO extends DurableObject {
     const session = token ? this.session(await hashToken(token)) : undefined;
     if (!session || !this.load()) return new Response("Unauthorized", { status: 401 });
     const pair = new WebSocketPair();
-    pair[1].serializeAttachment(session);
+    pair[1].serializeAttachment({
+      ...session,
+      ...(this.env.QA_ENABLED === true
+        ? { qa: { socketId: crypto.randomUUID(), acceptedInstance: this.qaInstance } }
+        : {}),
+    });
     this.ctx.acceptWebSocket(pair[1]);
     this.broadcast();
     await this.scheduleExpiry();
@@ -207,6 +218,23 @@ export class RoomDO extends DurableObject {
       command = parsed;
     } catch {
       reject("invalid", "操作の形式が正しくありません。");
+      return;
+    }
+    if (command.type === "qa:probe" && this.env.QA_ENABLED === true) {
+      // Previewだけの非秘密計測。値・ハッシュ・期限を持つsession自体は返さない。
+      const qa = session.qa;
+      this.send(ws, {
+        type: "qa",
+        instance: this.qaInstance,
+        deployment: this.env.VERSION?.id ?? "unavailable",
+        socketId: qa?.socketId ?? "unavailable",
+        acceptedInstance: qa?.acceptedInstance ?? "unavailable",
+        restoredAttachments: this.ctx.getWebSockets().filter((socket) => {
+          const attached = socket.deserializeAttachment() as Session | null;
+          return attached?.qa && attached.qa.acceptedInstance !== this.qaInstance;
+        }).length,
+        state: this.snapshot(this.load()!),
+      });
       return;
     }
     const state = this.load()!;

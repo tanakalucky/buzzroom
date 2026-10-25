@@ -74,6 +74,7 @@ test(
       compatibilityDate: "2026-10-12",
       compatibilityFlags: ["nodejs_compat"],
       durableObjects: { ROOMS: { className: "RoomDO", useSQLite: true } },
+      bindings: { QA_ENABLED: true },
       serviceBindings: { ASSETS: () => new Response("", { status: 404 }) },
       log: new Log(LogLevel.NONE),
     };
@@ -125,6 +126,14 @@ test(
       const a = (await one.until((m) => m.type === "snapshot")).you;
       const b = (await two.until((m) => m.type === "snapshot")).you;
       assert.notEqual(a, b);
+      host.send({ type: "qa:probe" });
+      const measurement = await host.until((m) => m.type === "qa");
+      assert.equal(measurement.instance, measurement.acceptedInstance);
+      assert.equal(measurement.restoredAttachments, 0);
+      assert.equal(typeof measurement.socketId, "string");
+      assert.equal(measurement.state.participants.length, 3);
+      for (const secret of [...tokens, ...hashes, "local-test-password", "expiresAt"])
+        assert.equal(JSON.stringify(measurement).includes(secret), false);
       const initial = hs.state;
       for (const secret of [...tokens, ...hashes, "local-test-password", "password", "expiresAt"])
         assert.equal(JSON.stringify(hs).includes(secret), false);

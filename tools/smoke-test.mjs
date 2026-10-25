@@ -20,6 +20,7 @@ test("built worker serves creation, Server Actions entry and /api/hello", async 
   try {
     await waitUntilReady(preview, baseUrl);
 
+    assert.equal((await fetch(baseUrl + "/__qa")).status, 404);
     const home = await fetch(baseUrl);
     assert.equal(home.status, 200);
     const homeHtml = await home.text();

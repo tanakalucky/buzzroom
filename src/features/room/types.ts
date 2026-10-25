@@ -17,6 +17,16 @@ export type RoomCommand =
   | { type: "reset"; round: number }
   | { type: "score"; round: number; targetId: string; correct: number; wrong: number }
   | { type: "host"; round: number; targetId: string };
+export type QAProbe = {
+  type: "qa";
+  instance: string;
+  deployment: string;
+  socketId: string;
+  acceptedInstance: string;
+  restoredAttachments: number;
+  state: Snapshot;
+};
 export type ServerMessage =
+  | QAProbe
   | { type: "snapshot"; state: Snapshot; you: string }
   | { type: "error"; code: string; message: string };

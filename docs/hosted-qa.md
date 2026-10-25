@@ -36,3 +36,13 @@
 2026-10-25の復帰後、既存Workerメタデータのobservability/logs/tracesは無効、constructor起動を識別するログもコードにないことを確認した。実hibernationを独立観測するには追加の計測・観測設定が必要になるため、無断で有効化しない。
 
 Cookie属性を値のコピーなしに確認するため専用Chromeタブの開発者UI操作を試みたが、操作がタイムアウトし、属性は確認できなかった。認証Cookieの値を取得してHTTP/WSクライアントへ渡す代替は使っていない。hostedの偽装Origin・権限外の生コマンド拒否も、現在のブラウザ操作APIでは注入できず未確認のままとする。これらを主要ゲームフローの合格やローカルの拒否テストの合格と混同しない。
+
+## Preview限定の追加計測
+
+残る3点の検証用に、`isPreview` のときだけ有効な `/__qa` を追加した。通常buildは404で、Accessの設定・許可対象・observability/logs/tracesは変更しない。GETの確認画面から同一OriginのPOSTで実行する。実ユーザーのCookieを転送せず、架空の部屋・3参加者の通常Server Actionsが発行したテスト用セッションだけをWorker内で使う。出力は属性・拒否結果・非秘密の計測ID・公開状態のダイジェストに限定し、Cookie値・パスワード・セッションハッシュは返さない。
+
+Cookieはhosted WorkerがServer ActionsのHTTP応答に実際に付けたSet-Cookieの属性を検査する。ブラウザ内の保存Cookie一覧を読み取った結果ではない。Origin/権限の異常系は、Access認証後の検証入口から同じhosted Workerの入口とnative RoomDOへ送る。未認証の外側のAccess拒否と、アプリケーションの403/401/forbiddenを区別する。正常接続・司会の正常操作を対照にし、拒否の前後で公開ゲーム状態が変わらないことを照合する。
+
+RoomDOの認証済み`qa:probe`はPreview限定。constructorごとのID、VERSION bindingのdeployment ID、accept時にattachmentへ保存した接続IDとconstructor ID、復元attachment数、SQLiteから読んだ公開状態だけを返す。検証Workerは3本のWebSocketを開いたまま保ち、DOにタイマーや待機処理を置かずに休止の機会を作る。同じ開いた接続のIDとdeploymentが不変、constructor IDが変化、3 attachment復元、採点・押下履歴・誤答ロックを含むSQLite状態が一致した場合だけ成功とする。一定時間待っただけ、再接続、再deployは成功条件にしない。観測できなければ不合格として返す。
+
+[Cloudflare公式のHibernation説明](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)に従い、`acceptWebSocket`と`serializeAttachment`/`deserializeAttachment`を用いた。アプリの人数・部屋寿命・セッションの24時間固定期限は変更していない。追加計測のローカル回帰では、通常buildの検証入口404、実Server ActionsのHTTPS属性、Origin/認証/権限の拒否と正常対照、秘密を含まない出力を確認した（全17件）。hostedの観測結果は実行後に追記する。
