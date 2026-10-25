@@ -65,3 +65,7 @@ vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、
 基盤のmainには既にPR #1のmerge commit `75e0a80` があるため、古い「mainへmergeしていない」という記述は現状ではない。既存本番のデプロイ成功SHA・Actions実行URL・Preview削除の証跡は今回未取得。今回のコードを本番へ反映したことを意味しない。
 
 参照：[Cloudflare WebSocket Hibernation](https://developers.cloudflare.com/durable-objects/examples/websocket-hibernation-server/)、[Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/)。
+
+## PR Previewの結線修正
+
+PR #2の初回Preview deployは10061で失敗した。cf/configの `bindings.durableObject({worker:"buzzroom",...})` は `script_name` を常に出力し、Preview内のクラスでなく既存本番Workerを参照するためだった。同Workerのloopback binding `exports.RoomDO` に修正し、既存の1部屋1DO・同Workerの設計を保持した。cfのexports宣言によるSQLite namespaceは維持し、資格情報やAccess設定は変更しない。

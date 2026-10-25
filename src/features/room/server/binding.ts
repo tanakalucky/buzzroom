@@ -1,7 +1,7 @@
-import { env } from "cloudflare:workers";
+import { exports } from "cloudflare:workers";
 import type { RoomDO } from "./room-do";
-// cf/config は同Workerの名前を文字列指定するとRPC型を推論しないため、
-// 生成EnvのROOMSだけを、実際にexportしたクラス型へ絞り込む。
-export function roomStub(roomId: string) {
-  return (env.ROOMS as DurableObjectNamespace<RoomDO>).getByName(roomId);
+
+// 同Workerのloopback bindingで、Previewごとのnamespaceへ接続する。
+export function roomStub(roomId: string): DurableObjectStub<RoomDO> {
+  return exports.RoomDO.getByName(roomId);
 }

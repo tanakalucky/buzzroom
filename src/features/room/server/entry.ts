@@ -1,5 +1,6 @@
 import vinext from "vinext/server/fetch-handler";
 import { isRoomId, sameOrigin } from "./security";
+import { roomStub } from "./binding";
 
 // vinext と同じ 1 MiB 上限。早期拒否で本文を未読にすると、ローカルの
 // workerd service binding が接続を reset するため、POST は入口で読み切る。
@@ -41,9 +42,9 @@ async function preparePost(request: Request): Promise<Request | Response> {
 // 同じWorkerの入口でWebSocketだけを直結する。通常HTTPはvinextへ。
 export default {
   ...vinext,
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const match = /^\/room\/([^/]+)\/socket$/.exec(new URL(request.url).pathname);
-    if (match && isRoomId(match[1])) return env.ROOMS.getByName(match[1]).fetch(request);
+    if (match && isRoomId(match[1])) return roomStub(match[1]).fetch(request);
     if (request.method === "POST") {
       const prepared = await preparePost(request);
       if (prepared instanceof Response) return prepared;

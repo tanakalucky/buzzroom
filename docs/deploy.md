@@ -30,4 +30,4 @@
 
 RoomDOは同Worker内にSQLite-backedとして実装し、ローカルで検証した。hosted Previewでの検証は未実施([implementation-decisions.md](implementation-decisions.md)参照)。
 
-同一 Worker 内で `script_name` を指定せずに定義した Durable Object クラスは、Worker Preview ごとに自動で独立した namespace・storage を持つ(Preview 間は分離され、state は同じ Preview 内でのみ存続し、Preview を削除すると state も削除される)。これは Worker Preview の話で、本番 Worker の version URL の話ではない。出典: [Cloudflare Docs - Durable Objects in Worker Previews](https://developers.cloudflare.com/workers/previews/resources/#durable-objects)。現時点では DO の設定そのものは追加しない。
+同一 Worker 内で `script_name` を指定せずに定義した Durable Object クラスは、Worker Preview ごとに自動で独立した namespace・storage を持つ(Preview 間は分離され、state は同じ Preview 内でのみ存続し、Preview を削除すると state も削除される)。これは Worker Preview の話で、本番 Worker の version URL の話ではない。出典: [Cloudflare Docs - Durable Objects in Worker Previews](https://developers.cloudflare.com/workers/previews/resources/#durable-objects)。今回のRoomDOはこの設定を追加済み。同Workerへの参照は `cloudflare:workers` の `exports.RoomDO` を使用し、固定の `script_name` を付けない。
