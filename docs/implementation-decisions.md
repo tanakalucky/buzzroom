@@ -2,7 +2,7 @@
 
 ## 基準と変更範囲
 
-origin/main `75e0a80` を基準に、別worktreeの `implement/room-game` で実装。元の `design/quiz-show-stage` と `25e32db`、Sites保存版8、元比較Site、本番は変更しない。今回のpush・PR・デプロイは未実行。
+origin/main `75e0a80` を基準に、別worktreeの `implement/room-game` で実装。元の `design/quiz-show-stage` と `25e32db`、Sites保存版8、元比較Site、本番は変更しない。承認後に作業ブランチをpushし、draft PR #2とWorker Preview `pr-2`を作成した。本番へのmerge/deployは未実行。
 
 vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、配信前永続化、D→E→Fを継承。app/はルーティングとレイアウト、room/server/が認証・RoomDO、buzzer/scoreは純粋処理。ブラウザからserver/をimportしない。独立Worker層や差し替え抽象化は追加していない。
 
@@ -69,3 +69,12 @@ vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、
 ## PR Previewの結線修正
 
 PR #2の初回Preview deployは10061で失敗した。cf/configの `bindings.durableObject({worker:"buzzroom",...})` は `script_name` を常に出力し、Preview内のクラスでなく既存本番Workerを参照するためだった。同Workerのloopback binding `exports.RoomDO` に修正し、既存の1部屋1DO・同Workerの設計を保持した。cfのexports宣言によるSQLite namespaceは維持し、資格情報やAccess設定は変更しない。
+
+## PRとPreviewの確認結果
+
+- Draft PR: https://github.com/tanakalucky/buzzroom/pull/2 。mainへのmergeはしていない。
+- 修正コミット `587131709e66102b869baed4ee5e036c1531947b` の [CI](https://github.com/tanakalucky/buzzroom/actions/runs/40148210584) と [Preview deploy](https://github.com/tanakalucky/buzzroom/actions/runs/40148210539) は成功。ローカルの全16テスト、型生成・型検査・lint・整形・buildも成功。
+- Preview名 `pr-2`、ID `2cd17e3a07354f7fbb32bbb711ac5113`、deployment ID `b76a5056-d8e0-4e1a-af0b-03e5d8177573`。ただしAPIの `preview_urls` と `deployment_urls` は空配列。閲覧成功とは扱わない。
+- 既存認証で `cf workers get buzzroom` を読み取り、Worker全体の `subdomain.enabled=false`、`subdomain.previews_enabled=false` を確認した。返された候補suffixは有効URLの証拠ではない。
+- Worker全体のPreview URL有効化はPR単体に閉じた変更ではないため、共有範囲を広げない指示に従い保留。Access・本番コード・本番ルート・ドメイン設定は変更していない。
+- 公開先のCookie・WebSocket・複数クライアント・再接続・hibernation検証は、安全なURL公開方法が確定するまで未実行。Dashboard専用タブはログイン画面だったが、CLI既存認証は読み取りに利用できた。新規ログイン・資格情報は作成していない。
