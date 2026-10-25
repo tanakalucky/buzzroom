@@ -78,8 +78,11 @@ test(
       serviceBindings: { ASSETS: () => new Response("", { status: 404 }) },
       log: new Log(LogLevel.NONE),
     };
-    function startRuntime() {
-      const converted = convertV4MiniflareOptions(options);
+    function startRuntime(qaEnabled = true) {
+      const converted = convertV4MiniflareOptions({
+        ...options,
+        bindings: { QA_ENABLED: qaEnabled },
+      });
       return new Miniflare({
         ...converted,
         workers: converted.workers.map((worker) => ({
@@ -204,7 +207,7 @@ test(
       assert.equal(expiryBefore, issuedExpiry); // 接続・操作・再接続で延長されない。
       for (const c of clients) c.ws.terminate();
       await mf.dispose();
-      mf = startRuntime();
+      mf = startRuntime(false);
       const restoredBindings = await mf.getBindings();
       const restoredStub = restoredBindings.ROOMS.getByName(roomId);
       assert.equal((await restoredStub.inspectSession(hashes[0])).expiresAt, issuedExpiry);
@@ -213,6 +216,12 @@ test(
       const restored = client(nextEndpoint, cookies[2]);
       clients.push(restored);
       const persisted = await restored.until((m) => m.type === "snapshot");
+      restored.send({ type: "qa:probe", round: 3 });
+      await restored.until((m) => m.type === "error" && m.code === "invalid");
+      assert.equal(
+        restored.messages.some((m) => m.type === "qa"),
+        false,
+      );
       assert.equal(persisted.you, b);
       assert.equal(persisted.state.hostId, b);
       assert.equal(persisted.state.participants.find((p) => p.id === a).correct, 5);

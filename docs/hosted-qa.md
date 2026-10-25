@@ -26,16 +26,13 @@
 
 ## 区別して残す未確認事項
 
-- Cookie属性のhosted HTTPヘッダー直接観測は未実施。実ブラウザの同一参加者復帰は確認したが、Secure・HttpOnly・SameSite・Expiresの属性確認とは区別する。属性設定と固定24h失効はソースおよびローカル回帰テストで確認済み。
-- hostedでの偽装Origin・権限外の生コマンド送信は未実施。ブラウザの認証Cookieを取り出さず、ローカルの独立クライアントで拒否を検証した。
-- 実際のDO hibernation開始・復帰を独立して観測していない。待機後の再操作やページ再接続、ローカルSQLite cold restart復元とは区別する。
 - 実iOS/Androidのキーボード・ノッチ、負荷・厳密な同時押下の広域遅延比較、24時間の実時間経過は未実施。
 
-## 残検証の観測条件
+## 追加計測前の経緯
 
-2026-10-25の復帰後、既存Workerメタデータのobservability/logs/tracesは無効、constructor起動を識別するログもコードにないことを確認した。実hibernationを独立観測するには追加の計測・観測設定が必要になるため、無断で有効化しない。
+2026-10-25の復帰後、既存Workerメタデータのobservability/logs/tracesは無効、constructor起動を識別するログもコードにないことを確認した。実hibernationを独立観測するには追加計測が必要だった。その後、ユーザーが非秘密の追加計測を含む検証を承認した。observability設定は引き続き変更していない。
 
-Cookie属性を値のコピーなしに確認するため専用Chromeタブの開発者UI操作を試みたが、操作がタイムアウトし、属性は確認できなかった。認証Cookieの値を取得してHTTP/WSクライアントへ渡す代替は使っていない。hostedの偽装Origin・権限外の生コマンド拒否も、現在のブラウザ操作APIでは注入できず未確認のままとする。これらを主要ゲームフローの合格やローカルの拒否テストの合格と混同しない。
+Cookie属性を値のコピーなしに確認するため専用Chromeタブの開発者UI操作を試みたが、操作がタイムアウトし、属性は確認できなかった。認証Cookieの値を取得してHTTP/WSクライアントへ渡す代替は使っていない。hostedの偽装Origin・権限外の生コマンド拒否も、現在のブラウザ操作APIでは注入できず未確認のままとする。以下のPreview限定計測によって今回確認した結果と区別する。
 
 ## Preview限定の追加計測
 
@@ -45,4 +42,16 @@ Cookieはhosted WorkerがServer ActionsのHTTP応答に実際に付けたSet-Coo
 
 RoomDOの認証済み`qa:probe`はPreview限定。constructorごとのID、VERSION bindingのdeployment ID、accept時にattachmentへ保存した接続IDとconstructor ID、復元attachment数、SQLiteから読んだ公開状態だけを返す。検証Workerは3本のWebSocketを開いたまま保ち、DOにタイマーや待機処理を置かずに休止の機会を作る。同じ開いた接続のIDとdeploymentが不変、constructor IDが変化、3 attachment復元、採点・押下履歴・誤答ロックを含むSQLite状態が一致した場合だけ成功とする。一定時間待っただけ、再接続、再deployは成功条件にしない。観測できなければ不合格として返す。
 
-[Cloudflare公式のHibernation説明](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)に従い、`acceptWebSocket`と`serializeAttachment`/`deserializeAttachment`を用いた。アプリの人数・部屋寿命・セッションの24時間固定期限は変更していない。追加計測のローカル回帰では、通常buildの検証入口404、実Server ActionsのHTTPS属性、Origin/認証/権限の拒否と正常対照、秘密を含まない出力を確認した（全17件）。hostedの観測結果は実行後に追記する。
+[Cloudflare公式のHibernation説明](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)に従い、`acceptWebSocket`と`serializeAttachment`/`deserializeAttachment`を用いた。アプリの人数・部屋寿命・セッションの24時間固定期限は変更していない。追加計測のローカル回帰では、通常buildの検証入口404、実Server ActionsのHTTPS属性、Origin/認証/権限の拒否と正常対照、秘密を含まない出力を確認した（全17件）。通常build設定では、認証済みの接続でもqa:probeを拒否し計測情報を返さないことを回帰テストで確認した。
+
+## 2026-10-25 追加計測のhosted結果
+
+計測コードhead `ff68051b7be69e9aebaf1ae7748acadc0392b5c1`。既存Accessに認証済みの専用Chromeタブで `/__qa` の確認画面から実行。deployment `0b3c6dd0-3d58-4688-a9ae-ffdeb50f31ac` は公式Preview deploy結果とprobeのVERSIONが一致した。
+
+- Cookie属性：HttpOnly=true、Secure=true、SameSite=strict、roomPath=true、Expiresまで86399秒。値や生ヘッダーは出力していない。対象はhosted Server Actionsが実際に発行したHTTP応答ヘッダーであり、ブラウザ保存後の属性UIの観測ではない。
+- Origin/認証：正規Origin＋有効なテストセッションの3接続が101。異なるOriginとOriginなしがそれぞれ403、セッションなし401、異なるOriginのPOST403。拒否前後のゲーム状態が一致した。
+- 操作認可：参加者からreset/judge/score/hostを送り、すべてアプリのforbidden。各拒否後の状態不変を確認。対照として司会のscore操作で正解数2への更新成功。
+- Accessとの区別：上記は認証済みの検証入口からhosted Worker入口/native RoomDOへの検査で、Accessの拒否をアプリ拒否と数えていない。別途、Cookieを持たない外部HTTPSリクエストはAccessログインへ302、通常workers.dev URLは404。既存の認証Cookieを読み出したりスクリプトへ移したりしていない。
+- hibernation：constructor IDが `4b13cf64-df1a-47bf-b9bf-f59f1b8e25b3` → `630be35c-3871-4a3a-8f42-f59c714fa3df` へ変化。同一deployment、同一socket ID `f4149b73-f154-4755-85a9-8aec40767e20`、3本ともopen/close・errorなし、再接続・再deployなし。accept時attachmentが3本復元され、採点・押下順・回答待ち・誤答ロックを含むSQLite公開状態のSHA-256 `394d7a4a79f5ccf5ea8df4a2adbf7751906cf4a818f93b8a208966ac5d56f7e0` が不変だった。待機時間ではなく、これらの観測を成功根拠とする。
+
+証跡の非秘密JSONは `../outputs/hosted-qa-results.json` に保存（作業環境のみ、Git管理外）。本番merge/deploy、Access/observability設定変更はしていない。実ブラウザから偽装Originを注入する外部ネットワーク経路の異常系、実iOS/Android、負荷、24時間の実時間経過は対象外のまま。
