@@ -1,0 +1,57 @@
+# Hosted Previewの画面・実通信確認
+
+対象は [PR #2 Preview](https://pr-2-buzzroom.luckyyeslucky777.workers.dev/)。2026-10-25、ユーザーがChromeでAccess認証を済ませたことを実画面で確認してから実施した。本番や元のSitesは変更していない。
+
+## 条件
+
+- 架空名の専用テストルームを新規作成。既存ユーザーデータは操作していない。
+- PR URL、公式APIから返ったDeployment URL `5172d611`・`853daf66`を使い、同じPreviewの同じ部屋に、異なるホストのCookieで司会＋参加者2人を接続した。後者の旧保存版もゲームコードは同一で、差分は設定・記録のみ。
+- 認証Cookieやトークンをブラウザから取り出したり、他のクライアントへコピーしたりしていない。既存Accessの許可対象は変更していない。
+
+## 確認できたこと
+
+- 認証後の白・青・黄色の作成画面から、名前＋任意のパスワードで作成。司会の実ルームへ接続した。
+- 招待URLの同じ部屋内で名前・パスワードを入力。誤パスワードで同じ画面にエラーを表示し、正しい値で再試行して参加した。
+- 3クライアントの参加者表示が一致。2参加者の押下が1・2番となり、先頭にだけ回答権が表示された。
+- 誤答で不正解数が加算され、1番のバッジを維持したままロック、2番へ回答権が移った。ロック中の再読み込みでも本人・得点・順位・ロックが復元された。
+- 正解で正解数が加算され、次ラウンドへ進んで順位・ロックを解除。手動リセットも同様に機能した。
+- ダブルクリック後も順位バッジは1つ。参加者数も増えていない。生の重複コマンド拒否はローカル実WebSocketテストでも確認している。
+- 司会の得点編集（正解4・不正解2）が他クライアントへ反映。司会交代で操作パネルと早押しボタンが入れ替わった。
+- 司会が部屋から離れると切断・復帰待ちを表示し、自動交代しなかった。再入室操作なしの復帰で同じ司会となった。
+- URLコピーは表示中の部屋URLと一致した。名前・パスワードは含まれない。
+- 320/390pxの参加者画面を確認。2列のカード、横方向のはみ出しなし、画面下部の固定ボタンを確認。viewport変更は検証後に解除した。
+- 待機後のリセットが成功し、再読み込みでも司会・3人・得点が保持された。3タブのconsole error/warnは0件。
+
+画面証跡は作業ディレクトリの `outputs/hosted-game-desktop.png`、`hosted-game-mobile-320.png`、`hosted-game-mobile-390.png` に保存した。
+
+## 区別して残す未確認事項
+
+- 実iOS/Androidのキーボード・ノッチ、負荷・厳密な同時押下の広域遅延比較、24時間の実時間経過は未実施。
+
+## 追加計測前の経緯
+
+2026-10-25の復帰後、既存Workerメタデータのobservability/logs/tracesは無効、constructor起動を識別するログもコードにないことを確認した。実hibernationを独立観測するには追加計測が必要だった。その後、ユーザーが非秘密の追加計測を含む検証を承認した。observability設定は引き続き変更していない。
+
+Cookie属性を値のコピーなしに確認するため専用Chromeタブの開発者UI操作を試みたが、操作がタイムアウトし、属性は確認できなかった。認証Cookieの値を取得してHTTP/WSクライアントへ渡す代替は使っていない。hostedの偽装Origin・権限外の生コマンド拒否も、現在のブラウザ操作APIでは注入できず未確認のままとする。以下のPreview限定計測によって今回確認した結果と区別する。
+
+## Preview限定の追加計測
+
+残る3点の検証用に、`isPreview` のときだけ有効な `/__qa` を追加した。通常buildは404で、Accessの設定・許可対象・observability/logs/tracesは変更しない。GETの確認画面から同一OriginのPOSTで実行する。実ユーザーのCookieを転送せず、架空の部屋・3参加者の通常Server Actionsが発行したテスト用セッションだけをWorker内で使う。出力は属性・拒否結果・非秘密の計測ID・公開状態のダイジェストに限定し、Cookie値・パスワード・セッションハッシュは返さない。
+
+Cookieはhosted WorkerがServer ActionsのHTTP応答に実際に付けたSet-Cookieの属性を検査する。ブラウザ内の保存Cookie一覧を読み取った結果ではない。Origin/権限の異常系は、Access認証後の検証入口から同じhosted Workerの入口とnative RoomDOへ送る。未認証の外側のAccess拒否と、アプリケーションの403/401/forbiddenを区別する。正常接続・司会の正常操作を対照にし、拒否の前後で公開ゲーム状態が変わらないことを照合する。
+
+RoomDOの認証済み`qa:probe`はPreview限定。constructorごとのID、VERSION bindingのdeployment ID、accept時にattachmentへ保存した接続IDとconstructor ID、復元attachment数、SQLiteから読んだ公開状態だけを返す。検証Workerは3本のWebSocketを開いたまま保ち、DOにタイマーや待機処理を置かずに休止の機会を作る。同じ開いた接続のIDとdeploymentが不変、constructor IDが変化、3 attachment復元、採点・押下履歴・誤答ロックを含むSQLite状態が一致した場合だけ成功とする。一定時間待っただけ、再接続、再deployは成功条件にしない。観測できなければ不合格として返す。
+
+[Cloudflare公式のHibernation説明](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)に従い、`acceptWebSocket`と`serializeAttachment`/`deserializeAttachment`を用いた。アプリの人数・部屋寿命・セッションの24時間固定期限は変更していない。追加計測のローカル回帰では、通常buildの検証入口404、実Server ActionsのHTTPS属性、Origin/認証/権限の拒否と正常対照、秘密を含まない出力を確認した（全17件）。通常build設定では、認証済みの接続でもqa:probeを拒否し計測情報を返さないことを回帰テストで確認した。
+
+## 2026-10-25 追加計測のhosted結果
+
+計測コードhead `ff68051b7be69e9aebaf1ae7748acadc0392b5c1`。既存Accessに認証済みの専用Chromeタブで `/__qa` の確認画面から実行。deployment `0b3c6dd0-3d58-4688-a9ae-ffdeb50f31ac` は公式Preview deploy結果とprobeのVERSIONが一致した。
+
+- Cookie属性：HttpOnly=true、Secure=true、SameSite=strict、roomPath=true、Expiresまで86399秒。値や生ヘッダーは出力していない。対象はhosted Server Actionsが実際に発行したHTTP応答ヘッダーであり、ブラウザ保存後の属性UIの観測ではない。
+- Origin/認証：正規Origin＋有効なテストセッションの3接続が101。異なるOriginとOriginなしがそれぞれ403、セッションなし401、異なるOriginのPOST403。拒否前後のゲーム状態が一致した。
+- 操作認可：参加者からreset/judge/score/hostを送り、すべてアプリのforbidden。各拒否後の状態不変を確認。対照として司会のscore操作で正解数2への更新成功。
+- Accessとの区別：上記は認証済みの検証入口からhosted Worker入口/native RoomDOへの検査で、Accessの拒否をアプリ拒否と数えていない。別途、Cookieを持たない外部HTTPSリクエストはAccessログインへ302、通常workers.dev URLは404。既存の認証Cookieを読み出したりスクリプトへ移したりしていない。
+- hibernation：constructor IDが `4b13cf64-df1a-47bf-b9bf-f59f1b8e25b3` → `630be35c-3871-4a3a-8f42-f59c714fa3df` へ変化。同一deployment、同一socket ID `f4149b73-f154-4755-85a9-8aec40767e20`、3本ともopen/close・errorなし、再接続・再deployなし。accept時attachmentが3本復元され、採点・押下順・回答待ち・誤答ロックを含むSQLite公開状態のSHA-256 `394d7a4a79f5ccf5ea8df4a2adbf7751906cf4a818f93b8a208966ac5d56f7e0` が不変だった。待機時間ではなく、これらの観測を成功根拠とする。
+
+証跡の非秘密JSONは `../outputs/hosted-qa-results.json` に保存（作業環境のみ、Git管理外）。本番merge/deploy、Access/observability設定変更はしていない。実ブラウザから偽装Originを注入する外部ネットワーク経路の異常系、実iOS/Android、負荷、24時間の実時間経過は対象外のまま。

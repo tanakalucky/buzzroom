@@ -26,7 +26,7 @@ PR の段階分割と進捗は [plan.md](plan.md) を参照。
 - 自由記述(タイプ入力)の解答
 - ルームの有効期限・参加人数上限などの運用上限(未決定の将来課題)
 
-## サーバ権威とリアルタイム同期(将来実装時の方針)
+## サーバ権威とリアルタイム同期
 
 - ルームごとに 1 つの SQLite バックの Durable Object(RoomDO)が状態を保持する。
 - クライアントとの通信はルーム単位で 1 本の WebSocket。採点を含む完全な状態スナップショットを配信する(機能ごとに別ソケットを作らない)。
@@ -35,15 +35,15 @@ PR の段階分割と進捗は [plan.md](plan.md) を参照。
 
 ## ディレクトリ構成と責務
 
-### 現在(公式 vinext Cloudflare スターターの構成のまま)
+### 現在(公式 vinext Cloudflare スターターを基盤に機能を追加)
 
-- `app/` - ルーティングとページ(App Router)。`app/api/hello` はスターター付属の API ルート例。内容はスターターのままで、`oxfmt` によるフォーマット適用と npm コマンドへの表記修正のみ行われている。
+- `app/` - 作成とルームのページ、レイアウト(App Router)。`app/api/hello` はスターター付属のAPI例として保持。
 - `vite.config.ts` / `next.config.ts` - ビルド設定。スターターのまま未変更。
-- `cloudflare.config.ts` - Worker 設定。本番公開ドメイン(`domains` / `workersDev: false`)を preview(`isPreview`)と production で分岐させる変更済み。他はスターターのまま。
+- `cloudflare.config.ts` - 既存の本番・Previewのドメイン分岐を保持。同WorkerのRoomDO公開、SQLite binding、room/server/entry.tsへの入口を追加。
 
-機能固有のコード(`src/features/*` 等)はまだ存在しない。下の「将来」は実装の合意事項であり、現状のディレクトリ構成ではない。
+`src/features/{room,buzzer,score}` に実ルーム・認証・同期・ルール・UIを実装。ローカルで検証し、hosted受け入れは未完了。詳細は [implementation-decisions.md](implementation-decisions.md) を参照。
 
-### 将来(機能実装時に導入する、合意済みの方針)
+### 機能の配置(合意済みの方針)
 
 - `src/features/room/` - ルーム作成・参加・参加者一覧・quizmaster 譲渡。サーバ側ロジック(RoomDO)は `server/` に置く。
 - `src/features/buzzer/` - キュー・解答権・ラウンドリセットの純粋処理と UI。

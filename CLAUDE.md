@@ -16,18 +16,18 @@
 
 `package.json` の `scripts` が正本。
 
-| コマンド            | 用途                                                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`       | ローカル開発サーバの起動                                                                                                   |
-| `npm run build`     | Cloudflare Worker 向け build                                                                                               |
-| `npm run start`     | build 済み Worker のローカル preview                                                                                       |
-| `npm run deploy`    | Cloudflare Worker への deploy                                                                                              |
-| `npm run typegen`   | Cloudflare Worker の Env/binding 型(`cf workers types`)と App Router のルート補助型(`vinext typegen`)を生成                |
-| `npm run typecheck` | `tsc --noEmit` による型チェック                                                                                            |
-| `npm run lint`      | oxlint によるチェック                                                                                                      |
-| `npm run fmt:check` | oxfmt によるフォーマット確認                                                                                               |
-| `npm run format`    | oxfmt によるフォーマット適用                                                                                               |
-| `npm test`          | build 済み Worker を preview し、ホームページと `/api/hello` の実応答を確認するスモークテスト(先に `npm run build` が必要) |
+| コマンド            | 用途                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`       | ローカル開発サーバの起動                                                                                                                     |
+| `npm run build`     | Cloudflare Worker 向け build                                                                                                                 |
+| `npm run start`     | build 済み Worker のローカル preview                                                                                                         |
+| `npm run deploy`    | Cloudflare Worker への deploy                                                                                                                |
+| `npm run typegen`   | Cloudflare Worker の Env/binding 型(`cf workers types`)と App Router のルート補助型(`vinext typegen`)を生成                                  |
+| `npm run typecheck` | `tsc --noEmit` による型チェック                                                                                                              |
+| `npm run lint`      | oxlint によるチェック                                                                                                                        |
+| `npm run fmt:check` | oxfmt によるフォーマット確認                                                                                                                 |
+| `npm run format`    | oxfmt によるフォーマット適用                                                                                                                 |
+| `npm test`          | ルール・セッションの単体テスト、build済みRoomDOの実通信・保存復元テスト、生成フォームとHTTP応答のスモークテスト(先に `npm run build` が必要) |
 
 ## main・リリース
 

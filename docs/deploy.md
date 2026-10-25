@@ -23,11 +23,11 @@
 
 ## 未決事項
 
-- 上記 secret の値・権限が実際に deploy・Preview の作成・削除に十分かは未検証。main への push・PR の Actions 実行で初めて確認できる。
-- `main` への実際の push・merge・deploy は、このドキュメントの更新時点ではまだ行っていない。ユーザー/コーディネーターの承認を経て PR を merge した後、`main` への push をトリガーに `deploy-production` job が実行されたときに初めて本番公開が成立する。
+- PR #2のPreview作成・更新は既存secretで成功した。本番deploy・Preview削除の今回の証跡は取得していない。
+- 現在のmainにはPR #1のmerge commit `75e0a80` がある。既存本番は `https://buzzroom.tanakalucky.com/`。今回の変更はdraft PR #2にpushし、Worker Preview `pr-2`へのdeployが成功した。本番は変更していない。hosted検証を、mainへのmerge後の本番確認と分けて記録する。
 
 ## 参考: Worker Preview と Durable Object(将来の RoomDO 実装時向けメモ)
 
-RoomDO はこのリポジトリではまだ実装していない(将来実装、[requirements.md](requirements.md) 参照)。実装時のために記録しておく参考情報。
+RoomDOは同Worker内にSQLite-backedとして実装し、ローカルで検証した。PR #2のPreview deployは成功。ユーザー承認後にPreview URLのみ再有効化し、通常workers.dev公開は無効を維持した。URLは https://pr-2-buzzroom.luckyyeslucky777.workers.dev/ 。既存Accessの対象・ポリシーは変更しておらず、未認証でAccessへの302を確認。本人のAccess認証後に3クライアントの主要ゲーム操作を確認した。[Hosted検証記録](hosted-qa.md) と [実装記録](implementation-decisions.md) を参照。
 
-同一 Worker 内で `script_name` を指定せずに定義した Durable Object クラスは、Worker Preview ごとに自動で独立した namespace・storage を持つ(Preview 間は分離され、state は同じ Preview 内でのみ存続し、Preview を削除すると state も削除される)。これは Worker Preview の話で、本番 Worker の version URL の話ではない。出典: [Cloudflare Docs - Durable Objects in Worker Previews](https://developers.cloudflare.com/workers/previews/resources/#durable-objects)。現時点では DO の設定そのものは追加しない。
+同一 Worker 内で `script_name` を指定せずに定義した Durable Object クラスは、Worker Preview ごとに自動で独立した namespace・storage を持つ(Preview 間は分離され、state は同じ Preview 内でのみ存続し、Preview を削除すると state も削除される)。これは Worker Preview の話で、本番 Worker の version URL の話ではない。出典: [Cloudflare Docs - Durable Objects in Worker Previews](https://developers.cloudflare.com/workers/previews/resources/#durable-objects)。今回のRoomDOはこの設定を追加済み。同Workerへの参照は `cloudflare:workers` の `exports.RoomDO` を使用し、固定の `script_name` を付けない。

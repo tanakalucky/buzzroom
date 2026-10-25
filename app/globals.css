@@ -1,17 +1,728 @@
 @import "tailwindcss";
-
 :root {
   color-scheme: light;
-  background: #f8fafc;
-  color: #111827;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -apple-system, BlinkMacSystemFont, "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+  color: #263656;
+  background: #edf0fc;
 }
-
+* {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
 }
-
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+  border: 1px solid #d8deed;
+  background: white;
+  color: #263656;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-height: 44px;
+  font-weight: 650;
+}
+button:disabled {
+  cursor: default;
+  color: #7d8ba7;
+  background: #f0f2f9;
+}
 a {
-  color: inherit;
+  color: #315ad3;
+  text-underline-offset: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #315ad3;
+  outline-offset: 3px;
+}
+input,
+select {
+  border: 1px solid #cfd7ea;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  color: #263656;
+  min-height: 48px;
+  min-width: 0;
+  max-width: 100%;
+}
+input[aria-invalid="true"] {
+  border-color: #a34832;
+}
+.site-header {
+  background: white;
+  border-bottom: 1px solid #dce1f0;
+}
+.header-inner {
+  max-width: 1240px;
+  margin: auto;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.brand {
+  text-decoration: none;
+  color: #1d2d51;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  color: white;
+  background: #315ad3;
+  border-radius: 7px;
+  width: 30px;
+  height: 33px;
+  font-size: 29px;
+}
+.header-note {
+  font-size: 11px;
+  color: #627195;
+}
+.page {
+  max-width: 1200px;
+  margin: auto;
+  padding: 28px 24px;
+}
+.page-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 10px;
+  color: #536cbd;
+  letter-spacing: 1.3px;
+  margin: 8px 0 22px;
+}
+.page-top > span {
+  color: #667595;
+  letter-spacing: 0;
+}
+.entry-shell {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  background: white;
+  border: 1px solid #dde3f0;
+  border-radius: 15px;
+  overflow: hidden;
+  max-width: 1000px;
+  margin: auto;
+}
+.entry-intro {
+  padding: 38px;
+  background: #303f79;
+  color: white;
+}
+.entry-intro > p:first-child {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #ffe367;
+}
+.entry-intro h1 {
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.7;
+  margin: 24px 0;
+}
+.entry-intro > p {
+  font-size: 12px;
+  line-height: 1.9;
+}
+.entry-art {
+  margin: 38px auto;
+  display: grid;
+  place-items: center;
+  width: 90px;
+  height: 90px;
+  background: #ffe367;
+  color: #303f79;
+  font-size: 75px;
+  border-radius: 27px;
+  transform: rotate(-8deg);
+}
+.entry-intro ol {
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 2.6;
+  color: #e0e6fc;
+}
+.entry-form {
+  padding: 38px;
+}
+.entry-form > h2 {
+  font-size: 23px;
+}
+.entry-form > p {
+  font-size: 12px;
+  color: #657395;
+  margin-top: 10px;
+}
+.entry-fields {
+  margin-top: 24px;
+}
+.entry-fields > label {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 13px;
+  margin: 20px 0 9px;
+}
+.entry-fields > label span {
+  font-size: 10px;
+  color: #6a7896;
+}
+.entry-fields > input {
+  width: 100%;
+}
+.password-wrap {
+  display: flex;
+  border: 1px solid #cfd7ea;
+  border-radius: 8px;
+}
+.password-wrap input {
+  width: 100%;
+  border: 0;
+}
+.password-wrap button {
+  border: 0;
+  padding: 8px 13px;
+  font-size: 11px;
+}
+.field-hint {
+  font-size: 11px;
+  color: #657395;
+  line-height: 1.8;
+  margin-top: 9px;
+}
+.form-error {
+  color: #953d2c;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.form-error:not(:empty) {
+  margin: 15px 0;
+}
+.primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffe367;
+  border-color: #ddc351;
+  width: 100%;
+  min-height: 56px;
+  margin: 23px 0 14px;
+}
+.back-link {
+  display: block;
+  margin: 16px 0;
+  text-align: center;
+  font-size: 12px;
+}
+.room-page {
+  padding-top: 18px;
+}
+.room-shell {
+  border: 1px solid #dce2f1;
+  border-radius: 13px;
+  background: white;
+  overflow: hidden;
+}
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: #303f79;
+  color: white;
+  padding: 16px 22px;
+}
+.room-header p {
+  color: #dce4ff;
+  font-size: 10px;
+}
+.room-header h1 {
+  font-size: 23px;
+  margin-top: 8px;
+}
+.room-header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.room-header-right button {
+  white-space: nowrap;
+  font-size: 12px;
+}
+.host-name {
+  font-size: 10px;
+  display: block;
+}
+.host-name strong {
+  display: block;
+  font-size: 13px;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+.room-gate {
+  max-width: 465px;
+  padding: 32px 24px;
+  margin: auto;
+}
+.room-gate > p {
+  font-size: 12px;
+  margin-top: 14px;
+  line-height: 1.8;
+}
+.room-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 265px;
+}
+.game-main {
+  padding: 16px;
+  min-width: 0;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+.section-heading h2 {
+  font-size: 15px;
+  white-space: nowrap;
+}
+.section-heading h2 span {
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 8px;
+}
+.section-heading small {
+  font-size: 10px;
+  color: #617294;
+  text-align: right;
+}
+.round-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid #dce3f6;
+  border-radius: 9px;
+  background: #f4f6fd;
+  margin-bottom: 12px;
+}
+.round-status > span {
+  color: #315ad3;
+  font-size: 10px;
+}
+.round-status > strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.participant-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.participant-card {
+  position: relative;
+  border: 1px solid #e0e4ef;
+  box-shadow: 0 1px 2px #26365608;
+  padding: 9px;
+  border-radius: 9px;
+  min-width: 0;
+}
+.participant-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 20px;
+  min-width: 0;
+}
+.participant-card h3 > button {
+  display: block;
+  font-size: 14px;
+  padding: 0;
+  min-height: 32px;
+  background: transparent;
+  border: 0;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 10px;
+  color: #315ad3;
+  background: #edf0fc;
+}
+.participant-status {
+  font-size: 11px;
+  margin: 1px 0 9px;
+  overflow-wrap: anywhere;
+}
+.card-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: baseline;
+  padding-bottom: 2px;
+}
+.card-scores span {
+  font-size: 10px;
+  color: #617294;
+  white-space: nowrap;
+}
+.card-scores strong {
+  font-size: 19px;
+  font-weight: 700;
+  color: #263656;
+  margin-left: 3px;
+}
+.self-label {
+  display: block;
+  font-size: 9px;
+  color: #315ad3;
+  margin-top: 4px;
+}
+.has-floor {
+  background: #f4f6ff;
+  border-color: #315ad3;
+  box-shadow: inset 0 0 0 1px #315ad3;
+}
+.has-floor .participant-status {
+  color: #315ad3;
+  font-weight: 700;
+}
+.is-locked {
+  background: #fdfaf1;
+  border-color: #c9b882;
+}
+.is-locked .participant-status {
+  color: #786321;
+}
+.order-badge {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #315ad3;
+  color: white;
+  font-size: 12px;
+  font-weight: 750;
+}
+.is-locked .order-badge {
+  background: #8a722c;
+}
+.grid-hint {
+  font-size: 11px;
+  color: #657395;
+  line-height: 1.8;
+  margin-top: 14px;
+}
+.room-actions {
+  padding: 20px 16px;
+  border-left: 1px solid #e0e5f1;
+  min-width: 0;
+}
+.room-actions h2 {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.current-answer {
+  font-size: 12px;
+  background: #f4f6fc;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+  margin-bottom: 14px;
+}
+.judge-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.judge-row button {
+  padding: 10px 4px;
+  font-size: 11px;
+}
+.judge-row .correct:not(:disabled) {
+  background: #315ad3;
+  color: white;
+  border-color: #315ad3;
+}
+.control-hint {
+  font-size: 11px;
+  color: #647493;
+  line-height: 1.9;
+  margin: 15px 0;
+}
+.room-actions form {
+  margin-top: 25px;
+}
+.room-actions form label {
+  font-size: 12px;
+}
+.room-actions form select {
+  width: 100%;
+  font-size: 12px;
+  margin: 9px 0;
+}
+.room-actions > p {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.room-footer {
+  font-size: 11px;
+  padding: 14px 18px;
+  color: #647493;
+  border-top: 1px solid #e0e5f1;
+}
+.connection-banner {
+  padding: 16px 22px;
+  background: #fff6d5;
+  color: #705a20;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.host-wait {
+  padding: 10px;
+  background: #fff6d5;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.room-error,
+.copy-status {
+  padding: 10px 20px;
+}
+.copy-status {
+  background: #f3f6ff;
+  color: #315ad3;
+  font-size: 12px;
+}
+.copy-fallback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px;
+}
+.copy-fallback input {
+  flex: 1;
+  min-width: 160px;
+}
+.name-dialog {
+  margin: auto;
+  width: min(430px, calc(100vw - 32px));
+  border: 1px solid #dce2f1;
+  border-radius: 14px;
+  padding: 25px;
+  color: #263656;
+}
+.name-dialog::backdrop {
+  background: #26365666;
+}
+.name-dialog h2 {
+  font-size: 16px;
+}
+.name-dialog .full-name {
+  font-size: 23px;
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+.name-dialog form {
+  margin-top: 20px;
+}
+.name-dialog label {
+  display: block;
+  font-size: 12px;
+}
+.name-dialog input {
+  display: block;
+  margin: 7px 0 15px;
+  width: 100%;
+}
+@media (max-width: 1100px) and (min-width: 851px) {
+  .participant-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 850px) {
+  .room-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .room-actions {
+    border-left: 0;
+    border-top: 1px solid #e0e5f1;
+  }
+}
+@media (max-width: 600px) {
+  .header-inner {
+    padding: 12px 16px;
+  }
+  .brand {
+    font-size: 22px;
+  }
+  .header-note {
+    font-size: 9px;
+  }
+  .page {
+    padding: 16px 10px;
+  }
+  .page-top {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  .page-top > span {
+    max-width: 100px;
+    text-align: right;
+  }
+  .entry-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .entry-intro {
+    padding: 24px;
+  }
+  .entry-intro h1 {
+    margin: 15px 0;
+    font-size: 25px;
+  }
+  .entry-art,
+  .entry-intro ol {
+    display: none;
+  }
+  .entry-form {
+    padding: 25px 22px;
+  }
+  input,
+  select {
+    font-size: 16px;
+  }
+  .room-header {
+    padding: 14px 12px;
+  }
+  .room-header h1 {
+    font-size: 21px;
+  }
+  .room-header p {
+    font-size: 9px;
+  }
+  .room-header-right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .host-name strong {
+    max-width: 105px;
+    font-size: 12px;
+  }
+  .room-gate {
+    padding: 25px 20px;
+  }
+  .game-main {
+    padding: 10px;
+  }
+  .participant-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .participant-card {
+    padding: 8px;
+  }
+  .avatar {
+    display: none;
+  }
+  .participant-card h3 > button {
+    min-height: 44px;
+  }
+  .participant-card h3 {
+    padding-right: 18px;
+  }
+  .section-heading small {
+    max-width: 140px;
+    font-size: 10px;
+  }
+  .card-scores {
+    gap: 6px;
+  }
+  .card-scores strong {
+    font-size: 18px;
+    margin-left: 1px;
+  }
+  .room-actions {
+    padding: 20px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (min-width: 851px) {
+  .room-page {
+    padding-top: 12px;
+  }
+  .room-header {
+    padding: 12px 20px;
+  }
+  .room-header h1 {
+    font-size: 21px;
+    margin-top: 5px;
+  }
+  .game-main {
+    padding: 12px;
+  }
+  .self-label {
+    position: absolute;
+    right: 8px;
+    bottom: 7px;
+    margin: 0;
+  }
 }

@@ -1,37 +1,47 @@
 # buzzroom
 
-パスワード制のルームでクイズの早押し(バズ)と採点を行う Web アプリ。[vinext](https://github.com/cloudflare/vinext) + Cloudflare Workers で動く。
+招待URLとパスワードで仲間が集まり、早押しと採点を行うWebアプリ。vinext + Cloudflare Workers + SQLite-backed Durable Objectsで動く。
 
-現時点のコードは starter + 基盤整備のみで、クイズ機能そのものは計画段階([docs/plan.md](docs/plan.md) 参照)。
+## 現在の実装
 
-## セットアップ
+- 作成は本人名と任意のパスワード。ルーム名・アカウント登録は不要。
+- 招待URLの同じルーム画面で、本人名とパスワードを入力して入室。
+- 1部屋1 RoomDO、単一WebSocketで参加者・押下順・回答権・得点を同期。受信順はサーバーが確定する。
+- 誤答ロック、正解での次ターン、司会の手動リセット・得点編集・司会交代。
+- HttpOnly Cookieとサーバー内のトークンハッシュで本人を復元。発行から固定24時間、アクセスでは延長しない。ルームの有効期限とは別。
+- コンパクトなカード、右上の押下順、名前の全文表示、画面下部固定の早押しボタン。問題そのものは出題者が口頭等で読み上げる。音声は再生しない。
+
+実ゲームの実装を [draft PR #2](https://github.com/tanakalucky/buzzroom/pull/2) と [Access保護下のPreview](https://pr-2-buzzroom.luckyyeslucky777.workers.dev/) で検証中。本番には反映していない。Sites保存版8はデザイン参照として保持し、変更していない。[Hosted検証記録](docs/hosted-qa.md) と [実装記録](docs/implementation-decisions.md) に確認範囲と限界を記載する。
+
+## ローカル開発
 
 ```sh
-npm install
+npm ci
+npm run typegen
 npm run dev
 ```
 
-ターミナルに表示されるローカル URL を開く。
+作成した任意のルームURLへ、別のブラウザプロファイルやプライベートウィンドウで参加する。同じブラウザの同じルームではCookieにより同一参加者となる。保存されるローカルのRoomDOデータを本番データとして扱わない。
 
-## スクリプト
+## 検証
 
-| コマンド            | 用途                                                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`       | ローカル開発サーバの起動                                                                                                   |
-| `npm run build`     | Cloudflare Worker 向け build                                                                                               |
-| `npm run start`     | build 済み Worker のローカル preview                                                                                       |
-| `npm run deploy`    | Cloudflare Worker への deploy                                                                                              |
-| `npm run typegen`   | Cloudflare Worker の Env/binding 型(`cf workers types`)と App Router のルート補助型(`vinext typegen`)を生成                |
-| `npm run typecheck` | `tsc --noEmit` による型チェック                                                                                            |
-| `npm run lint`      | oxlint によるチェック                                                                                                      |
-| `npm run fmt:check` | oxfmt によるフォーマット確認                                                                                               |
-| `npm run format`    | oxfmt によるフォーマット適用                                                                                               |
-| `npm test`          | build 済み Worker を preview し、ホームページと `/api/hello` の実応答を確認するスモークテスト(先に `npm run build` が必要) |
+```sh
+npm run lint
+npm run fmt:check
+npm run typegen
+npm run typecheck
+npm run build
+npm test
+```
+
+テストはルール・セッションの純粋関数、生成フォーム経由のServer Actions、ビルド済みworkerd上の実WebSocketとSQLite永続化を検証する。テスト専用の保存先を使い、本番にはアクセスしない。
+
+`npm run start` はビルド済みWorkerのローカルpreview。`npm run format` は整形。`npm run deploy` は本番操作になるため、今回の作業では実行しない。
 
 ## ドキュメント
 
-- [docs/requirements.md](docs/requirements.md) - 全体スコープ・非目標・ディレクトリ構成
-- [docs/features/room.md](docs/features/room.md) / [buzzer.md](docs/features/buzzer.md) / [score.md](docs/features/score.md) - 機能ごとの仕様
-- [docs/plan.md](docs/plan.md) - PR の段階分割と進捗
-- [docs/deploy.md](docs/deploy.md) - CI/CD の構成・必要な secret・未決事項
-- [CLAUDE.md](CLAUDE.md) - このリポジトリで作業する際のローカルルール
+- [全体要求と構成](docs/requirements.md)
+- [ルーム](docs/features/room.md) / [早押し](docs/features/buzzer.md) / [採点](docs/features/score.md)
+- [段階と進捗](docs/plan.md) / [デプロイ](docs/deploy.md)
+- [実装・検証記録](docs/implementation-decisions.md)
+- [作業規約](CLAUDE.md)
