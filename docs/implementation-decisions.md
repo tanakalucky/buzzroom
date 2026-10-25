@@ -60,7 +60,7 @@ vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、
 
 ## 残る検証と制約
 
-実iOS/Androidキーボード・ノッチの実機検証、hosted Worker Preview、公開環境での負荷検証は未実施。Hibernation APIを使用し、cold restartと復元を検証したが、Cloudflare上でソケットを維持したまま実際にhibernationしたことの観測は未実施。D/E/Fのhosted受け入れは未完了。
+実iOS/Androidキーボード・ノッチの実機検証、hosted Worker Previewのゲーム動作、公開環境での負荷検証は未実施。Hibernation APIを使用し、cold restartと復元を検証したが、Cloudflare上でソケットを維持したまま実際にhibernationしたことの観測は未実施。D/E/Fのhosted受け入れは未完了。
 
 基盤のmainには既にPR #1のmerge commit `75e0a80` があるため、古い「mainへmergeしていない」という記述は現状ではない。既存本番のデプロイ成功SHA・Actions実行URL・Preview削除の証跡は今回未取得。今回のコードを本番へ反映したことを意味しない。
 
@@ -70,7 +70,7 @@ vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、
 
 PR #2の初回Preview deployは10061で失敗した。cf/configの `bindings.durableObject({worker:"buzzroom",...})` は `script_name` を常に出力し、Preview内のクラスでなく既存本番Workerを参照するためだった。同Workerのloopback binding `exports.RoomDO` に修正し、既存の1部屋1DO・同Workerの設計を保持した。cfのexports宣言によるSQLite namespaceは維持し、資格情報やAccess設定は変更しない。
 
-## PRとPreviewの確認結果
+## PRとPreviewの確認結果（URL再有効化前）
 
 - Draft PR: https://github.com/tanakalucky/buzzroom/pull/2 。mainへのmergeはしていない。
 - 修正コミット `587131709e66102b869baed4ee5e036c1531947b` の [CI](https://github.com/tanakalucky/buzzroom/actions/runs/40148210584) と [Preview deploy](https://github.com/tanakalucky/buzzroom/actions/runs/40148210539) は成功。ローカルの全16テスト、型生成・型検査・lint・整形・buildも成功。
@@ -78,3 +78,13 @@ PR #2の初回Preview deployは10061で失敗した。cf/configの `bindings.dur
 - 既存認証で `cf workers get buzzroom` を読み取り、Worker全体の `subdomain.enabled=false`、`subdomain.previews_enabled=false` を確認した。返された候補suffixは有効URLの証拠ではない。
 - Worker全体のPreview URL有効化はPR単体に閉じた変更ではないため、共有範囲を広げない指示に従い保留。Access・本番コード・本番ルート・ドメイン設定は変更していない。
 - 公開先のCookie・WebSocket・複数クライアント・再接続・hibernation検証は、安全なURL公開方法が確定するまで未実行。Dashboard専用タブはログイン画面だったが、CLI既存認証は読み取りに利用できた。新規ログイン・資格情報は作成していない。
+
+## Preview URLの再有効化
+
+PR #1の成功ログも同じ `cf previews deploy pr-1 --prebuilt` であり、別Worker方式ではなかった。本番初回のActions実行 `38195874159` に、workers.dev無効・preview_urls未指定のためPreview URLsを無効化した記録がある。
+
+その後のユーザー承認に従い、Worker `buzzroom` の `subdomain.previews_enabled` だけをtrueにした。通常公開の `enabled=false` を維持し、API読み戻しでも両方を確認した。設定に `previewUrls: true` を明示し、後の本番デプロイで再度無効化されるのを防ぐ。
+
+既存Accessアプリ `workers.dev` の対象は `*.luckyyeslucky777.workers.dev/*`。対象・許可ポリシー・IdP・セッション設定等は前後で一致し、追加・拡大していない。公式APIが返したURLは https://pr-2-buzzroom.luckyyeslucky777.workers.dev/ 。未認証で302により `tanakalucky.cloudflareaccess.com` へ遷移し、通常workers.dev URLは404を確認した。
+
+専用ブラウザでもAccessの「Send login code」画面を確認。認証済みセッションがないため、hostedのCookie・WebSocket・複数クライアント・再接続・実hibernation確認は本人ログイン待ち。Accessを回避する資格情報や許可ポリシーは追加しない。本番へのmerge/deployは行わない。

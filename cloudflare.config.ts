@@ -7,6 +7,8 @@ export default defineConfig(({ isPreview }) => ({
     entrypoint,
     compatibilityDate: "2026-10-12",
     compatibilityFlags: ["nodejs_compat"],
+    // 通常workers.dev公開とは別。既存Access配下のPR Preview URLを保持する。
+    previewUrls: true,
     assets: { notFoundHandling: "none" },
     env: {
       ASSETS: bindings.assets(),
