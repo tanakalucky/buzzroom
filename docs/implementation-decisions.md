@@ -60,9 +60,9 @@ vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、
 
 ## 残る検証と制約
 
-実iOS/Androidキーボード・ノッチの実機検証、hosted Worker Previewのゲーム動作、公開環境での負荷検証は未実施。Hibernation APIを使用し、cold restartと復元を検証したが、Cloudflare上でソケットを維持したまま実際にhibernationしたことの観測は未実施。D/E/Fのhosted受け入れは未完了。
+hosted Previewの主要ゲーム操作は [hosted-qa.md](hosted-qa.md) の範囲で確認済み。実iOS/Androidキーボード・ノッチ、公開環境の負荷試験、実DO hibernationの独立した観測は未実施。待機後の再操作・再読み込み・ローカルSQLite cold restart復元とは区別する。
 
-基盤のmainには既にPR #1のmerge commit `75e0a80` があるため、古い「mainへmergeしていない」という記述は現状ではない。既存本番のデプロイ成功SHA・Actions実行URL・Preview削除の証跡は今回未取得。今回のコードを本番へ反映したことを意味しない。
+基盤のmainには既にPR #1のmerge commit `75e0a80` があるため、古い「mainへmergeしていない」という記述は現状ではない。既存本番の同SHAの成功はActions実行38195874159で確認した。Preview削除の今回の検証は行っていない。今回のコードを本番へ反映したことを意味しない。
 
 参照：[Cloudflare WebSocket Hibernation](https://developers.cloudflare.com/durable-objects/examples/websocket-hibernation-server/)、[Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/)。
 
@@ -87,4 +87,4 @@ PR #1の成功ログも同じ `cf previews deploy pr-1 --prebuilt` であり、�
 
 既存Accessアプリ `workers.dev` の対象は `*.luckyyeslucky777.workers.dev/*`。対象・許可ポリシー・IdP・セッション設定等は前後で一致し、追加・拡大していない。公式APIが返したURLは https://pr-2-buzzroom.luckyyeslucky777.workers.dev/ 。未認証で302により `tanakalucky.cloudflareaccess.com` へ遷移し、通常workers.dev URLは404を確認した。
 
-専用ブラウザでもAccessの「Send login code」画面を確認。認証済みセッションがないため、hostedのCookie・WebSocket・複数クライアント・再接続・実hibernation確認は本人ログイン待ち。Accessを回避する資格情報や許可ポリシーは追加しない。本番へのmerge/deployは行わない。
+当初はAccessログイン待ちだったが、その後ユーザーのChromeで認証後の実画面を確認し、専用テストルームで司会と参加者2人のhostedゲーム操作を検証した。確認範囲と未確認事項は [hosted-qa.md](hosted-qa.md) に記録する。Accessを回避する資格情報や許可ポリシーは追加しない。本番へのmerge/deployは行わない。

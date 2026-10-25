@@ -11,7 +11,7 @@
 - HttpOnly Cookieとサーバー内のトークンハッシュで本人を復元。発行から固定24時間、アクセスでは延長しない。ルームの有効期限とは別。
 - コンパクトなカード、右上の押下順、名前の全文表示、画面下部固定の早押しボタン。問題そのものは出題者が口頭等で読み上げる。音声は再生しない。
 
-これは実ゲームの**ローカル実装**であり、この変更のpush・PR・hosted Preview・本番反映は行っていない。Sites保存版8はデザイン参照として保持し、変更していない。詳細と検証限界は [実装記録](docs/implementation-decisions.md)。
+実ゲームの実装を [draft PR #2](https://github.com/tanakalucky/buzzroom/pull/2) と [Access保護下のPreview](https://pr-2-buzzroom.luckyyeslucky777.workers.dev/) で検証中。本番には反映していない。Sites保存版8はデザイン参照として保持し、変更していない。[Hosted検証記録](docs/hosted-qa.md) と [実装記録](docs/implementation-decisions.md) に確認範囲と限界を記載する。
 
 ## ローカル開発
 
