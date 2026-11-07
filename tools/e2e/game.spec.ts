@@ -43,16 +43,49 @@ test("BR-UI v1: 独立した3画面で入室・早押し・採点・司会交代
     await expect(host.getByText(/ROUND 02/)).toBeVisible();
     await expect(card(host, "検証参加二").locator(".card-scores")).toContainText("正解 1");
     await expect(one.getByRole("button", { name: /早押し！/ })).toBeEnabled();
-    await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
-    await expect(host.getByText(/ROUND 03/)).toBeVisible();
 
+    await two.getByRole("button", { name: /早押し！/ }).click();
+    await expect(host.getByText("検証参加二さんに回答権があります")).toBeVisible();
+    await one.getByRole("button", { name: /早押し！/ }).click();
+    await expect(card(host, "検証参加一").getByLabel("押下順 2番")).toBeVisible();
+    await host.getByRole("button", { name: "× 不正解", exact: true }).click();
+    for (const page of [host, one, two]) {
+      await expect(card(page, "検証参加二").getByLabel("押下順 1番")).toBeVisible();
+      await expect(card(page, "検証参加二")).toContainText("誤答ロック");
+      await expect(card(page, "検証参加一").getByLabel("押下順 2番")).toBeVisible();
+      await expect(page.getByText("検証参加一さんに回答権があります")).toBeVisible();
+    }
+    await expect(two.getByRole("button", { name: /このターンはお休み/ })).toBeDisabled();
+    await expect(one.getByRole("button", { name: /あなたに回答権があります/ })).toBeDisabled();
+
+    await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
+    for (const page of [host, one, two]) {
+      await expect(page.getByText(/ROUND 03/)).toBeVisible();
+      await expect(page.getByLabel(/^押下順 /)).toHaveCount(0);
+      await expect(page.getByText("× 誤答ロック", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("わかったら、早押し！", { exact: true })).toBeVisible();
+    }
+    for (const page of [one, two]) {
+      await expect(page.getByRole("button", { name: /早押し！/ })).toBeEnabled();
+    }
+
+    for (const page of [host, one, two]) {
+      await expect(card(page, "検証参加一").locator(".card-scores > span")).toHaveText([
+        "○ 正解 0",
+        "× 不正解 1",
+      ]);
+    }
     await host.getByRole("button", { name: "検証参加一の名前を全文表示" }).click();
     const dialog = host.getByRole("dialog");
     await dialog.getByLabel("正解数", { exact: true }).fill("4");
     await dialog.getByLabel("不正解数", { exact: true }).fill("2");
     await dialog.getByRole("button", { name: "スコアを保存" }).click();
-    await expect(card(two, "検証参加一").locator(".card-scores")).toContainText("正解 4");
-    await expect(card(two, "検証参加一").locator(".card-scores")).toContainText("不正解 2");
+    for (const page of [host, one, two]) {
+      await expect(card(page, "検証参加一").locator(".card-scores > span")).toHaveText([
+        "○ 正解 4",
+        "× 不正解 2",
+      ]);
+    }
     await dialog.getByRole("button", { name: "閉じる" }).click();
     await host.getByLabel("出題者を交代").selectOption({ label: "検証参加二" });
     await host.getByRole("button", { name: "交代する" }).click();
