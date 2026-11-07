@@ -76,12 +76,15 @@ jobs:
       - name: Preview の deploy
         if: steps.pr_check.outputs.should_deploy == 'true'
         env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # アプリが固定している cf を使う。Preview 名は位置引数。
         run: |
           set -o pipefail
-          npx --no-install cf previews deploy "$PREVIEW_NAME" --prebuilt | tee "$RUNNER_TEMP/preview-deploy-result.txt"
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_HEAD"
+          GITHUB_SHA="$actual_sha" npx --no-install cf previews deploy "$PREVIEW_NAME" --prebuilt | tee "$RUNNER_TEMP/preview-deploy-result.txt"
 
       - name: Hosted E2E へ引き継ぐ対象を記録
         if: steps.pr_check.outputs.should_deploy == 'true'

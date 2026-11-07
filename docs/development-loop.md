@@ -22,6 +22,9 @@ UI E2E は通常 build 後、`npx --no-install playwright install chromium` と 
 
 CI と preview-deploy は別 workflow。両方の run URL・attempt・実結果を同じ最終 PR head に照合する。
 preview-deploy は直前にも PR の open/head を確認し、既存 `cf previews deploy pr-N --prebuilt` を使う。
+cf beta.14 は `workers/commit_sha` を checkout ではなく `GITHUB_SHA` 優先で採用するため、
+deploy step は期待 PR head と実 checkout SHA を照合し、cf 子プロセスだけにその SHA を渡す。
+workflow 全体の event SHA は変更しない。公式 API の deployment annotation `workers/commit_sha` も PR head と一致することを確認する。
 公式 deploy 出力と summary を取得し、公式 API/CLI の実結果から Preview URL と immutable deployment URL・version ID を確定する。
 URL の文字列を推測して成功証拠にしない。CLI が構造化結果を返さない場合は Coordinator が公式結果を読取照合する。
 
