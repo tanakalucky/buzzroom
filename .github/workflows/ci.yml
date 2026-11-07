@@ -20,7 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: 検証対象 SHA の照合
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'head=%s\nbase=%s\nrun=%s/%s/actions/runs/%s/attempts/%s\n' "$actual_sha" "$BASE_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - run: python3 -m unittest discover -s .ai-config/tests -v
+      - run: python3 .ai-config/helpers/orchestrator_dry_run.py --fixtures .ai-config/tests/fixtures/orchestrator_dry_run.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -32,6 +46,16 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+      - run: npx --no-install playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: UI E2E の非秘密結果を保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-e2e-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_attempt }}
+          path: test-results/e2e.json
+          if-no-files-found: ignore
+          retention-days: 7
 
   # main への push で verify が成功したときだけ本番へ deploy する。
   deploy-production:

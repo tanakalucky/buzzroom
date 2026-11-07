@@ -13,7 +13,8 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "test": "node --test tools/*.test.mjs tools/smoke-test.mjs"
+    "test": "node --test tools/*.test.mjs tools/smoke-test.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@vinext/cloudflare": "^1.1.0",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^2.0.0-beta.sha-91c870c02",
+    "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",

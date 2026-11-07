@@ -6,3 +6,7 @@ next-env.d.ts
 .vinext/
 .cloudflare/
 *.tsbuildinfo
+
+/test-results/
+/playwright-report/
+__pycache__/

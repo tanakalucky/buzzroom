@@ -35,6 +35,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
+      - name: Preview 対象 SHA の照合
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -74,4 +79,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # アプリが固定している cf を使う。Preview 名は位置引数。
-        run: npx --no-install cf previews deploy "$PREVIEW_NAME" --prebuilt
+        run: |
+          set -o pipefail
+          npx --no-install cf previews deploy "$PREVIEW_NAME" --prebuilt | tee "$RUNNER_TEMP/preview-deploy-result.txt"
+
+      - name: Hosted E2E へ引き継ぐ対象を記録
+        if: steps.pr_check.outputs.should_deploy == 'true'
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          printf 'preview=%s\nhead=%s\nbase=%s\nrun=%s/%s/actions/runs/%s/attempts/%s\n' "$PREVIEW_NAME" "$HEAD_SHA" "$BASE_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
+          echo '公式 deploy 出力から URL/deployment version を照合し、docs/development-loop.md の hosted UI E2E を追跡する。deploy 成功だけでは E2E 成功にしない。' >> "$GITHUB_STEP_SUMMARY"
