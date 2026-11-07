@@ -31,3 +31,7 @@
 RoomDOは同Worker内にSQLite-backedとして実装し、ローカルで検証した。PR #2のPreview deployは成功。ユーザー承認後にPreview URLのみ再有効化し、通常workers.dev公開は無効を維持した。URLは https://pr-2-buzzroom.luckyyeslucky777.workers.dev/ 。既存Accessの対象・ポリシーは変更しておらず、未認証でAccessへの302を確認。本人のAccess認証後に3クライアントの主要ゲーム操作を確認した。[Hosted検証記録](hosted-qa.md) と [実装記録](implementation-decisions.md) を参照。
 
 同一 Worker 内で `script_name` を指定せずに定義した Durable Object クラスは、Worker Preview ごとに自動で独立した namespace・storage を持つ(Preview 間は分離され、state は同じ Preview 内でのみ存続し、Preview を削除すると state も削除される)。これは Worker Preview の話で、本番 Worker の version URL の話ではない。出典: [Cloudflare Docs - Durable Objects in Worker Previews](https://developers.cloudflare.com/workers/previews/resources/#durable-objects)。今回のRoomDOはこの設定を追加済み。同Workerへの参照は `cloudflare:workers` の `exports.RoomDO` を使用し、固定の `script_name` を付けない。
+
+## 同じ head の品質確認
+
+CI の実 checkout SHA、Preview の公式 URL/version、Access 認証後の手動 UI E2E と merge 前照合は [開発ループ](development-loop.md) に従う。CI のローカル UI E2E は hosted の認証・配備確認と区別する。
