@@ -49,6 +49,7 @@ export async function createOriginProxy(baseURL: string) {
     socket.end("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
   };
   const track = (socket: Duplex) => {
+    if (sockets.has(socket)) return socket;
     sockets.add(socket);
     socket.on("error", () => socket.destroy());
     socket.on("close", () => sockets.delete(socket));

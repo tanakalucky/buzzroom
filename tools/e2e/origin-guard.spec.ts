@@ -32,10 +32,10 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
         .end();
     } else if (request.method === "POST") {
       allowedPosts++;
-      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
       response.end("saved");
     } else {
-      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
       response.end(
         '<form action="/create" method="POST"><input name="name" value="fixture"><button>作成</button></form>',
       );
@@ -48,6 +48,7 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
     try {
       const page = await allowed.newPage();
       await test.step("同じ origin の redirect", () => page.goto("/safe-redirect"));
+      await expect(page.getByRole("button", { name: "作成" })).toBeVisible();
       await test.step("同じ origin の POST", () =>
         page.getByRole("button", { name: "作成" }).click());
       await expect(page.locator("body")).toHaveText("saved");
