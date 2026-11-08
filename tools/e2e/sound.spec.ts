@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createAppContext, closeAppContexts } from "./origin-guard";
 
-test("BR-SOUND v2: 端末別オン・受理ごとの3音・連打禁止・復帰・再生失敗を扱う", async ({
+test("BR-SOUND-CLARITY/1: 端末別オン・受理ごとの3音・連打禁止・復帰・再生失敗を扱う", async ({
   browser,
   baseURL,
 }) => {
@@ -9,13 +9,19 @@ test("BR-SOUND v2: 端末別オン・受理ごとの3音・連打禁止・復帰
   const [host, one, two] = await Promise.all(contexts.map((context) => context.newPage()));
   for (const page of [host, one, two]) {
     await page.addInitScript(() => {
-      const observed = window as unknown as { soundNotes: number[]; failSound: boolean };
+      const observed = window as unknown as {
+        soundNotes: number[];
+        soundWaves: string[];
+        failSound: boolean;
+      };
       observed.soundNotes = [];
+      observed.soundWaves = [];
       observed.failSound = false;
       const start = OscillatorNode.prototype.start;
       OscillatorNode.prototype.start = function (...args) {
         if (observed.failSound) throw new Error("テスト用の再生失敗");
         observed.soundNotes.push(this.frequency.value);
+        observed.soundWaves.push(this.type);
         return start.apply(this, args);
       };
     });
@@ -44,7 +50,7 @@ test("BR-SOUND v2: 端末別オン・受理ごとの3音・連打禁止・復帰
         "aria-pressed",
         "true",
       );
-      await expect.poll(() => notes(page)).toEqual([1047]);
+      await expect.poll(() => notes(page)).toEqual([880]);
     }
 
     await one.getByRole("button", { name: /早押し！/ }).click();
@@ -52,25 +58,36 @@ test("BR-SOUND v2: 端末別オン・受理ごとの3音・連打禁止・復帰
     await two.getByRole("button", { name: /早押し！/ }).click();
     await expect(two.getByRole("button", { name: /回答待ち/ })).toBeDisabled();
     await one.keyboard.press("Space");
-    for (const page of [host, one])
-      await expect.poll(() => notes(page)).toEqual([1047, 1047, 1047]);
+    for (const page of [host, one]) await expect.poll(() => notes(page)).toEqual([880, 880, 880]);
     expect(await notes(two)).toEqual([]);
 
     await host.getByRole("button", { name: "× 不正解", exact: true }).click();
     await expect(one.getByRole("button", { name: /このターンはお休み/ })).toBeDisabled();
     for (const page of [host, one])
-      await expect.poll(() => notes(page)).toEqual([1047, 1047, 1047, 180]);
+      await expect.poll(() => notes(page)).toEqual([880, 880, 880, 146.83, 130.81]);
     await host.getByRole("button", { name: "○ 正解", exact: true }).click();
     for (const page of [host, one])
-      await expect.poll(() => notes(page)).toEqual([1047, 1047, 1047, 180, 660, 880]);
+      await expect
+        .poll(() => notes(page))
+        .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51]);
+
+    for (const page of [host, one]) {
+      expect(
+        await page.evaluate(() => (window as unknown as { soundWaves: string[] }).soundWaves),
+      ).toEqual(["triangle", "triangle", "triangle", "square", "square", "sine", "sine", "sine"]);
+    }
 
     await one.getByRole("button", { name: "音をオフ", exact: true }).click();
     await one.getByRole("button", { name: /早押し！/ }).click();
-    await expect.poll(() => notes(host)).toEqual([1047, 1047, 1047, 180, 660, 880, 1047]);
-    expect(await notes(one)).toEqual([1047, 1047, 1047, 180, 660, 880]);
+    await expect
+      .poll(() => notes(host))
+      .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880]);
+    expect(await notes(one)).toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51]);
     await expect(one.getByRole("button", { name: /あなたに回答権があります/ })).toBeDisabled();
     await one.getByRole("button", { name: "音をオン", exact: true }).click();
-    await expect.poll(() => notes(one)).toEqual([1047, 1047, 1047, 180, 660, 880, 1047]);
+    await expect
+      .poll(() => notes(one))
+      .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880]);
 
     // 同じページのWebSocketだけを一度閉じ、音オンを保った自動再接続を観測する。
     await host.evaluate(() => {
@@ -83,7 +100,9 @@ test("BR-SOUND v2: 端末別オン・受理ごとの3音・連打禁止・復帰
     await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
     await expect(host.getByText("再接続しています", { exact: true })).toBeVisible();
     await expect(host.getByText("● 接続中", { exact: false })).toBeVisible();
-    expect(await notes(host)).toEqual([1047, 1047, 1047, 180, 660, 880, 1047]);
+    expect(await notes(host)).toEqual([
+      880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880,
+    ]);
     await one.reload();
     await expect(one.getByRole("button", { name: "音をオン", exact: true })).toBeVisible();
     expect(await notes(one)).toEqual([]);

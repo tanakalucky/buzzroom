@@ -33,6 +33,8 @@ RoomDO・24時間固定Cookie・Server Actions・WebSocket・早押しと採点�
 - **G（BR-SOUND v2）**: 独立3画面で初期オフ・端末別オン、押下2件（待ち行列を含む）・正解・不正解の音、押下後のボタン非活性、オフ中・再接続・再読み込み時の過去音抑止、音声失敗後も早押しできることを確認する。
   テスト: `tools/room-sound.test.mjs`（音の区別・オフ・再生失敗）、`tools/room-connection.test.mjs`（連続受信・重複・復元）、`tools/room-do.test.mjs`（受理時のみ通知）、`tools/e2e/sound.spec.ts`（3画面UIとWeb Audio呼び出し）。聴取による音色・音量の確認はブラウザ自動検証と区別する。
 
+- **BR-SOUND-CLARITY/1**: 早押しの短音・正解の上昇チャイム・不正解の低いブザーを区別する。`tools/room-sound.test.mjs`で波形・音域・リズム・包絡・終了時の解放を検証し、`tools/e2e/sound.spec.ts`で受理時の再生と既存の無音・失敗条件を確認する。主観的な聞きやすさは本人のPreview試聴で確認し、自動検証とは区別する。
+
 ## 範囲外(現時点では着手しない)
 
 [requirements.md](requirements.md) の非目標を参照。ルームの有効期限・参加人数上限は未決定の将来課題であり、上記スライスには含めない。
