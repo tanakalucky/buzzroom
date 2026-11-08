@@ -95,6 +95,9 @@ test("BR-SOUND v2: 端末別オン・受理ごとの3音・連打禁止・復帰
       two.getByRole("status").filter({ hasText: "音を再生できませんでした" }),
     ).toBeVisible();
     await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
+    for (const page of [host, one, two]) {
+      await expect(page.getByText(/ROUND 03/)).toBeVisible();
+    }
     await expect(two.getByRole("button", { name: /早押し！/ })).toBeEnabled();
     await two.getByRole("button", { name: /早押し！/ }).click();
     await expect(host.getByText("音検証参加二さんに回答権があります")).toBeVisible();
