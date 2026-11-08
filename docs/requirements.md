@@ -37,16 +37,16 @@ PR の段階分割と進捗は [plan.md](plan.md) を参照。
 
 ### 現在(公式 vinext Cloudflare スターターを基盤に機能を追加)
 
-- `app/` - 作成とルームのページ、レイアウト(App Router)。`app/api/hello` はスターター付属のAPI例として保持。
+- `app/` - vinext App Router のルート、SSRでのルーム・セッション検証、Server Actionsの接続、レイアウトと全体スタイル。`app/api/hello` はスターター付属のAPI例として保持。
 - `vite.config.ts` / `next.config.ts` - ビルド設定。スターターのまま未変更。
 - `cloudflare.config.ts` - 既存の本番・Previewのドメイン分岐を保持。同WorkerのRoomDO公開、SQLite binding、room/server/entry.tsへの入口を追加。
 
-`src/features/{room,buzzer,score}` に実ルーム・認証・同期・ルール・UIを実装。ローカルで検証し、hosted受け入れは未完了。詳細は [implementation-decisions.md](implementation-decisions.md) を参照。
+フロントエンドはFSDの責務で配置する。詳細は [implementation-decisions.md](implementation-decisions.md) を参照。
 
-### 機能の配置(合意済みの方針)
+### FSDの配置と依存方向
 
-- `src/features/room/` - ルーム作成・参加・参加者一覧・quizmaster 譲渡。サーバ側ロジック(RoomDO)は `server/` に置く。
-- `src/features/buzzer/` - キュー・解答権・ラウンドリセットの純粋処理と UI。
-- `src/features/score/` - 正解・誤答カウンタと手動編集の UI。
-- `src/components/ui/` - 複数 feature で共有する shadcn/ui コンポーネント。必要になるまで導入しない。
-- 依存の向き: ブラウザ側コードは `server/` を import しない。RoomDO は `buzzer`・`score` の純粋関数を呼び出してルーム状態をまとめて永続化し、逆依存や循環依存を避ける。
+- `src/views/{create-room,room,error,not-found}/` - FSDのpages層。画面全体と画面に閉じた同期処理を置く。`src/pages` はvinextのPages Routerとして解釈されるため使わない。
+- `src/features/{enter-room,buzz,edit-score}/` - 名前・パスワード入力、早押し、得点編集のUI。
+- `src/entities/room/` - 単一の`RoomState`集約に属する参加者・得点・早押し状態の型と純粋ルール。ルーム状態を別entityへ分割しない。
+- 依存の向きは `app → views → features → entities`。スライス外は明示的な`index.ts`公開APIを使い、同一レイヤーの別スライスは参照しない。スライス内では相対importを使う。widgets・shared・entity間の`@x`は必要がないため設けない。
+- `src/features/room/server/` は既存のバックエンド配置を維持する。フロントエンドのfeatureスライスではなく、認証・Server Actions・RoomDO・Worker入口の境界。ブラウザ側からimportせず、ルートが既存Server Actionsを画面へ渡す。RoomDOは`entities/room`の純粋ルールを使い、状態をまとめて永続化する。

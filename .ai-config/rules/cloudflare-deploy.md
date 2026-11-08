@@ -1,7 +1,6 @@
 # Cloudflare デプロイ運用
 
-Cloudflare への導入・変更ではこのルールを適用する。具体的な設定と実行コードは対象アプリに置く。
-導入は[共通手順](../workflows/cloudflare-deploy.md)で進める。
+Cloudflareの導入・変更は[共通手順](../workflows/cloudflare-deploy.md)で進め、具体的な設定・実行コードは対象アプリに置く。
 
 ## 共通のライフサイクル
 
@@ -34,7 +33,7 @@ PR 番号は GitHub の正の整数から取り、ブランチ名や PR 本文�
 - 既存 Worker 配下の Worker Preview `pr-番号` を優先する。dev-tools の既存例は
   `cf previews deploy pr-1 --prebuilt`、削除は
   `wrangler preview delete --worker-name dev-tools --name=pr-1`。
-  これは方式の参考であり、Worker 名・コマンド・CLI バージョンを全アプリへ固定しない。
+  参考例であり、Worker名・コマンド・CLI版を全アプリへ固定しない。
 - framework/runtime と公式 CLI の対応を調べて選ぶ。React + Vite の静的配信、SSR、Durable Objects 等を
   区別し、ビルド出力・adapter・bindings・migration を確認する。独立 Worker `app-pr-1`、
   version alias、Pages 等へ方式を変える場合は、URL・資源分離・削除方法の違いを示して利用者に確認する。

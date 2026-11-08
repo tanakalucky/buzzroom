@@ -7,7 +7,7 @@ import { runInNewContext } from "node:vm";
 const source = stripTypeScriptTypes(
   readFileSync(
     process.env.BR_CONN_SOURCE ??
-      new URL("../src/features/room/use-room-connection.ts", import.meta.url),
+      new URL("../src/views/room/model/use-room-connection.ts", import.meta.url),
     "utf8",
   ),
 )

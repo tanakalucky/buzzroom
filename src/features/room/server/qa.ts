@@ -1,6 +1,6 @@
 import { roomStub } from "./binding";
 import { hashToken } from "./security";
-import type { QAProbe, ServerMessage, Snapshot } from "../types";
+import type { QAProbe, ServerMessage, Snapshot } from "../../../entities/room";
 
 type AppFetch = (request: Request) => Promise<Response>;
 type Result = { check: string; passed: boolean; [key: string]: unknown };

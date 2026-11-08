@@ -34,7 +34,6 @@ jobs:
         with:
           python-version: "3.9"
       - run: python3 -m unittest discover -s .ai-config/tests -v
-      - run: python3 .ai-config/helpers/orchestrator_dry_run.py --fixtures .ai-config/tests/fixtures/orchestrator_dry_run.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24

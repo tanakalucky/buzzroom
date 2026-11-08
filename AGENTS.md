@@ -1,7 +1,7 @@
 # 共通の作業指示
 
-不明点はまず既存の会話・資料・コードで確認し、明示済みの内容を聞き直さない。
-ユーザーの判断が必要な不明点は推測で補わず、必ず質問する。回答を得て認識が揃うまで、その判断に依存する作業は進めない。
+不明点は既存の会話・資料・コードで先に確認し、明示済みの内容は聞き直さない。
+ユーザー判断が必要な点だけ質問し、回答に依存する作業は待つ。
 質問時は[認識合わせの共通手順](.ai-config/workflows/clarify.md)を全文読んで適用する。
 
 Codexのレビュー担当（親・子）は、規約・skillを読む最初の操作からshellをGit読取に限定する。
@@ -12,9 +12,8 @@ Codexのレビュー担当（親・子）は、規約・skillを読む最初の�
 
 初期読込に`cat`・`rg`・`pwd`を使わず、`git show HEAD:<path>`で現在本文を置き換えない。
 必要な文書や読取手段が不足する場合は迂回せず、未完了と報告する。
-これはプロンプトによる運用指示であり、コマンド名の技術的な拒否を保証しない。
-既存のsandbox・認証・承認設定を変更せず、親・子ともに共通レビュー方針の読取専用の運用を守る。
-実効条件の未確認だけを理由に開始を中止せず、確認できた条件と未確認の条件を区別して報告する。
+親・子とも読取専用を守り、既存のsandbox・認証・承認設定を変更しない。
+運用指示は技術的な拒否の保証ではない。実効条件の未確認だけを理由に開始を中止せず、確認済みと未確認を分けて報告する。
 
 作業開始時に、このファイルと同じルートにある
 [コーディング規約](.ai-config/rules/coding.md)を全文読んで適用する。
@@ -22,30 +21,29 @@ Codexのレビュー担当（親・子）は、規約・skillを読む最初の�
 PR作成前にも同じ記載方針を全文読んで適用する。
 Markdownリンクの自動展開を前提にせず、明示的に読む。見つからなければ不足を報告する。
 
-実装前の認識合わせにはClaude Codeの`/clarify`、Codexの`$config-clarify`を使う。
-レビューを依頼された場合はClaude Codeの`/ai-dev-config-review`、Codexの`$config-review`を使う。
+実装前の認識合わせにはClaude Codeの`/clarify`、Codexの`$clarify`を使う。
+レビューを依頼された場合はClaude Codeの`/ai-dev-config-review`、Codexの`$ai-dev-config-review`を使う。
 いずれも各ツールの入口から`.ai-config/`の共通手順を読む。
 
-1つの Issue の開発進行には両ツールの`development-orchestrator`を使い、
-[共通手順](.ai-config/workflows/development-orchestrator.md)を全文読む。
-Coordinator（コーディネーター）はAIでも人間でも担える役割で、Issue の選択・起動・追跡・再開を担当する。
-オーケストレーターは受け取った Issue の進行を担当する。
+1つのIssueは両ツールの`development-orchestrator`から[共通手順](.ai-config/workflows/development-orchestrator.md)を全文読む。
+Coordinator（コーディネーター）はAIでも人間でも担える人間の代役で、日次のIssue確認・整理とIssue担当への依頼、週次repo担当への依頼を担う。
+依頼受理後の進行・品質・停止再開・重複防止はrepo側で完結させる。
+[役割と受け渡し](.ai-config/workflows/agent-handoff.md)を全文読み、最上位セッションから専門agentへ委譲する。
 週次候補は同名の`weekly-discovery`から[課題発見手順](.ai-config/workflows/weekly-discovery.md)、
 運用改善は同名の`development-improvement`から[振返り・効果確認](.ai-config/workflows/development-improvement.md)を全文読む。
-外部実行への導入には[接続・導入テンプレート](.ai-config/templates/development-loop-integration.md)を使い、保存だけで有効化しない。
+外部実行や既存設定の変更は、対象と本人の許可を確認する。この記載だけで外部設定・スケジュールを有効化しない。
 
 フロントエンドの新規作成・変更では[FSDルール](.ai-config/rules/fsd.md)を全文読む。
-Claude Codeの`/fsd`、Codexの`$config-fsd`から導入・変更の共通手順を使う。
+Claude Codeの`/fsd`、Codexの`$fsd`から導入・変更の共通手順を使う。
 
 Cloudflareの導入・変更では[デプロイ運用ルール](.ai-config/rules/cloudflare-deploy.md)を全文読む。
-Claude Codeの`/cloudflare-deploy`、Codexの`$config-cloudflare-deploy`から共通手順を使う。
+Claude Codeの`/cloudflare-deploy`、Codexの`$cloudflare-deploy`から共通手順を使う。
 
 レビューと修正は[ラウンドの共通定義](.ai-config/review/rounds.md)を読んで進める。
 実装後のPR作成とレビュー記録は[PRへの記録手順](.ai-config/review/records.md)を全文読んで適用する。
-各ラウンドでは正確性/安全性・テスト・設計/可読性を独立した担当に各1回依頼して統合する。
-レビュー担当は報告のみ、修正とラウンド管理は実装担当が行う。
-利用できない入口・委譲機能や未完了の観点は未完了と報告する。
-実装担当が自分で読み直すことを独立レビューに数えない。
+独立3観点の依頼・統合は[レビュー手順](.ai-config/review/workflow.md)に従う。
+レビュー担当は報告のみ。修正・回数管理は実装担当が行い、自己レビューで独立レビューを代用しない。
+入口・委譲機能が使えない場合や観点の未完了は、未完了と報告する。
 
 # Buzzroom 固有ルール
 
@@ -85,7 +83,7 @@ Claude Codeの`/cloudflare-deploy`、Codexの`$config-cloudflare-deploy`から�
 
 ## レビューの前提
 
-`/ai-dev-config-review` / `$config-review` とそこから呼ばれる `review-correctness` / `review-design` / `review-tests` skill を使うレビューは、このリポジトリでは次を前提にする。
+`/ai-dev-config-review` / `$ai-dev-config-review` とそこから呼ばれる `review-correctness` / `review-design` / `review-tests` skill を使うレビューは、このリポジトリでは次を前提にする。
 
 - `review-correctness`: 実装と `docs/requirements.md` / `docs/features/*.md` の内容が矛盾していないか、挙動・仕様を変えた変更で対応する doc の更新が漏れていないかを確認する。
 - `review-design`: コードおよび doc の明確さ・構成の重複を確認する。
