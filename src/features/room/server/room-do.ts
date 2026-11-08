@@ -1,8 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
-import { initialBuzzer, judgeAnswer, pressBuzzer, resetRound } from "../../buzzer/rules";
-import { awardAnswer, isScore } from "../../score/rules";
-import { validateDisplayName } from "../input";
-import type { RoomState, Snapshot, ServerMessage } from "../types";
+import { initialBuzzer, judgeAnswer, pressBuzzer, resetRound } from "../../../entities/room";
+import { awardAnswer, isScore } from "../../../entities/room";
+import { validateDisplayName } from "../../../entities/room";
+import type { RoomState, Snapshot, ServerMessage } from "../../../entities/room";
 import {
   hashToken,
   isRoomId,

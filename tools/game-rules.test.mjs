@@ -1,13 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  initialBuzzer,
-  pressBuzzer,
-  judgeAnswer,
-  resetRound,
-} from "../src/features/buzzer/rules.ts";
-import { awardAnswer, editScore } from "../src/features/score/rules.ts";
-import { validateDisplayName } from "../src/features/room/input.ts";
+import { initialBuzzer, pressBuzzer, judgeAnswer, resetRound } from "../src/entities/room/index.ts";
+import { awardAnswer, editScore } from "../src/entities/room/index.ts";
+import { validateDisplayName } from "../src/entities/room/index.ts";
 const participants = ["p1", "p2", "p3"];
 test("受信処理の呼び出し順だけで押下順を確定し、未押下には順位を付けない", () => {
   let s = initialBuzzer();

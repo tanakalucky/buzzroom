@@ -5,7 +5,7 @@ description: アプリに合うCloudflareデプロイ設定を導入・変更し
 
 # cloudflare-deploy
 
-リンクはこのSKILL.mdの場所を基準に解決し、指定した文書を全文読んでから実行する。読めなければ不足を報告する。
+リンクはこのSKILL.mdからの相対参照。指定文書を全文読んでから実行し、読めなければ不足を報告する。
 
 [Cloudflare運用ルール](../../../.ai-config/rules/cloudflare-deploy.md)を適用し、
 [導入・変更の共通手順](../../../.ai-config/workflows/cloudflare-deploy.md)に従う。

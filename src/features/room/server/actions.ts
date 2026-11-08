@@ -2,8 +2,8 @@
 import { roomStub } from "./binding";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { validateDisplayName } from "../input";
-import type { EntryResult } from "../types";
+import { validateDisplayName } from "../../../entities/room";
+import type { EntryResult } from "../../../entities/room";
 import {
   cookieName,
   cookiePath,

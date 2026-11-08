@@ -32,9 +32,8 @@ jobs:
           printf 'head=%s\nbase=%s\nrun=%s/%s/actions/runs/%s/attempts/%s\n' "$actual_sha" "$BASE_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.12"
       - run: python3 -m unittest discover -s .ai-config/tests -v
-      - run: python3 .ai-config/helpers/orchestrator_dry_run.py --fixtures .ai-config/tests/fixtures/orchestrator_dry_run.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24

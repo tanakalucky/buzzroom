@@ -4,7 +4,25 @@
 
 origin/main `75e0a80` を基準に、別worktreeの `implement/room-game` で実装。元の `design/quiz-show-stage` と `25e32db`、Sites保存版8、元比較Site、本番は変更しない。承認後に作業ブランチをpushし、draft PR #2とWorker Preview `pr-2`を作成した。本番へのmerge/deployは未実行。
 
-vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、配信前永続化、D→E→Fを継承。app/はルーティングとレイアウト、room/server/が認証・RoomDO、buzzer/scoreは純粋処理。ブラウザからserver/をimportしない。独立Worker層や差し替え抽象化は追加していない。
+vinext / Cloudflare Workers、1部屋1 SQLite-backed RoomDO、単一WebSocket、配信前永続化、D→E→Fを継承。app/はルーティングとレイアウト、room/server/が認証・RoomDOを担当する。ブラウザからserver/をimportしない。独立Worker層や差し替え抽象化は追加していない。
+
+## フロントエンドのFSD配置
+
+FSDのpages層は`src/views`とする。`src/pages`はvinextのPages Router予約ディレクトリなので使わず、ルートの`app/`をFSDのapp層として維持する。ソースは`src/`、既存エイリアス`@/*`はリポジトリルートを指す設定のまま。共有パッケージは追加しない。
+
+| 従来の配置                                                                        | 配置先と責務                           | 公開API・利用元                                      |
+| --------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------- |
+| `app/page.tsx`の画面                                                              | `views/create-room/ui`                 | `CreateRoomPage`を作成ルートから使用                 |
+| `features/room/room-screen.tsx`・`use-room-connection.ts`、ルームルートの入室画面 | `views/room/ui`・`model`               | `RoomGate`・`RoomScreen`をルームルートから使用       |
+| `app/error.tsx`・`app/not-found.tsx`の画面                                        | `views/error/ui`・`views/not-found/ui` | `ErrorPage`・`NotFoundPage`を各ルートから使用        |
+| `features/room/entry-form.tsx`                                                    | `features/enter-room/ui`               | `EntryForm`を作成画面・入室画面から使用              |
+| `features/buzzer/buzzer-button.tsx`・CSS                                          | `features/buzz/ui`                     | `BuzzerButton`・`BuzzerStatus`をルーム画面から使用   |
+| `features/score/score-editor.tsx`                                                 | `features/edit-score/ui`               | `ScoreEditor`をルーム画面から使用                    |
+| `features/room/{input,types}.ts`・`features/{buzzer,score}/rules.ts`              | `entities/room/model`                  | 型・純粋関数を`entities/room/index.ts`から明示export |
+
+ルームは参加者・得点・早押し状態を単一の`RoomState`として扱うため、これらの型とルールを同じentityに置く。依存は`app → views → features → entities`とし、スライス外からは公開APIだけを参照する。内部は相対importで、自スライスの公開APIを経由しない。画面専用のWebSocket同期は`views/room/model`に置き、features間の直接依存や循環を作らない。widgets・shared・別entity・`@x`は追加しない。
+
+`src/features/room/server/`はバックエンド境界として配置を維持する。認証・Cookie・Origin検証・SQL・binding・Worker入口とCloudflare設定は維持し、純粋ルールと型のimportだけをentity公開APIへ向ける。作成・入室のServer Actionsは`app/`から画面へaction propで渡す。ルームルートではparams、ID、部屋の存在、Cookie、セッションの順にSSR検証する。エラー画面のclient境界、DOM・文言・CSS・操作は維持する。
 
 ## 承認済みのセッション
 

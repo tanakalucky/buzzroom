@@ -1,15 +1,17 @@
 # 開発ループの接続と品質確認
 
 対象は `tanakalucky/buzzroom`。配布元 `tanakalucky/ai-dev-config` の固定版
-`9878d48de386a170766c6640843d95df621c9f08` から5配布物を統合する。
+`83601d2e9e5293bbb72db8356657ed8f2f180237`（PR #32）から6配布物を統合する。
+配布対象は `AGENTS.md`・`CLAUDE.md`・`.ai-config/`・`.agents/`・`.claude/`・`.codex/agents/`。
+役割の直接委譲と受け渡しは [共通契約](../.ai-config/workflows/agent-handoff.md) に従う。
 共通手順は `.ai-config/`、アプリの仕様は requirements/features、コマンドは package.json を正本とする。
 
 ## CI とローカル UI E2E
 
 CI は PR の merge ref ではなく実際の head を checkout し、その SHA を照合する。
 既存 lint・整形・型生成・型検査・通常 build・単体/DO/HTTP テストに加え、
-Python 標準テスト、helper の合成 fixture、`npm run test:e2e` を実行する。
-合成確認は証拠の整合性だけを扱い、実モデルや外部操作の成功を保証しない。
+Python 標準の構造テストと `npm run test:e2e` を実行する。
+構造テストは配布物の参照・入口・定義を確認し、実モデルの委譲や外部操作の成功を保証しない。
 
 UI E2E は通常 build 後、`npx --no-install playwright install chromium` と `npm run test:e2e` で実行する。
 既存 Chromium を使う場合は `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` にその実行ファイルを指定できる。
@@ -26,7 +28,7 @@ cf beta.14 は `workers/commit_sha` を checkout ではなく `GITHUB_SHA` 優�
 deploy step は期待 PR head と実 checkout SHA を照合し、cf 子プロセスだけにその SHA を渡す。
 workflow 全体の event SHA は変更しない。公式 API の deployment annotation `workers/commit_sha` も PR head と一致することを確認する。
 公式 deploy 出力と summary を取得し、公式 API/CLI の実結果から Preview URL と immutable deployment URL・version ID を確定する。
-URL の文字列を推測して成功証拠にしない。CLI が構造化結果を返さない場合は Coordinator が公式結果を読取照合する。
+URL の文字列を推測して成功証拠にしない。CLI が構造化結果を返さない場合はrepo最上位の指揮者が公式結果を読取照合する。
 
 `pr-N` URL は更新可能なので、E2E の前後で PR head とその Preview の deployment version を再取得し、
 同じ head/deployment であることを確認する。既存 Preview QA の VERSION は追加の照合に利用できるが、
@@ -68,7 +70,7 @@ PR #4限定のCI mobile代替承認を他の実行に流用せず、既知の制
 | BR-UI/1 score-host | 得点編集の全画面反映、司会交代、司会切断時の復帰待ちと本人復帰                     | 同上 / 同項目の実画面結果                   |
 | BR-UI/1 mobile     | 320/390px で横にはみ出さず参加者の早押しボタンが表示                               | 同上 / 同項目の実画面結果                   |
 
-Coordinator は対象 PR に以下の非秘密の記録を残し、全項目を同じ最終 head に照合する。
+repo最上位の指揮者は対象 PR に以下の非秘密の記録を残し、全項目を同じ最終 head に照合する。
 
 ```text
 repository / branch / PR / 固定base / PR head / 実checkout SHA
@@ -85,15 +87,16 @@ Cloudflare deploy token は Access 通過資格ではない。機械認証が存
 既存認証済みブラウザを利用できない場合は blocker として停止する。
 Service Token・Service Auth policy・CI secret・Access 許可を追加して通過させない。
 
-通常 PR で進め、Coordinator が merge 直前に期待 head を再取得する。
-CI・Preview・hosted UI E2E・独立3観点の同 SHA 完了と P0/P1 収束が揃い、現在の本人の対象限定許可がある場合だけ merge を判断する。
+通常 PR で進め、repo最上位の指揮者がmerge直前に期待headを再取得する。
+CI・Preview・hosted UI E2E・独立3観点の同SHA完了とP0/P1収束、未分類・未完了なしを照合し、対象repo/branch・merge操作の現在有効な本人許可と安全・権限条件がすべて成立する場合だけ、既存の承認済み手段で期待headを指定してmergeを判断・実行する。
+条件不足や拒否では停止し、別経路・別担当で迂回しない。実装者子・レビュー担当はmerge/deployを行わず、本番deployと認証・security・権限変更は別の安全境界に従う。
 これは運用ゲートであり、全員への技術的な強制や branch protection の保証ではない。
 head 変更時は以前の成功を流用しない。本番は新 main の CI/deploy の成功後、`/`・`/api/hello`・`/__qa` の404を read-only で確認する。
 本番で QA を有効化したり、検証用ゲームデータを書き込んだりしない。
 
 ## 既存実行と週次2系統の接続契約
 
-Coordinator が既存実行の管理先で repo/Issue/実行URL を確認し、同じ実行を継続する。
+Coordinatorは日次のIssue確認・整理と依頼、本人への質問・結果の受け渡しを担う。依頼前に既存UIのrepo/Issue・既存依頼を確認し、受理後はrepo最上位の指揮者が既存実行の管理先でrepo/Issue/実行URLを照合して同じ実行の進行・品質・停止再開・重複防止を管理する。
 この文書は外部 automation の変更・複製起動・スケジュール・自動投稿を有効化しない。
 実行管理先への安全な参照と本人識別は外側の Coordinator が保持し、私的な識別子や指示本文を公開 repo へ転記しない。
 停止時は固定 base/head、branch/PR、段階、質問と承認対象、レビュー回数、既存記録を引き継ぐ。
