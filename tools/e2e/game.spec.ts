@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { createAppContext, closeAppContexts } from "./origin-guard";
 
 test("BR-UI v1: 独立した3画面で入室・早押し・採点・司会交代と復帰を維持する", async ({
   browser,
+  baseURL,
 }) => {
-  const contexts = await Promise.all(
-    [0, 1, 2].map(() => browser.newContext({ baseURL: "http://127.0.0.1:4173" })),
-  );
+  const contexts = await Promise.all([0, 1, 2].map(() => createAppContext(browser, baseURL)));
   const [host, one, two] = await Promise.all(contexts.map((context) => context.newPage()));
   const errors: string[] = [];
   for (const page of [host, one, two]) page.on("pageerror", (error) => errors.push(error.message));
@@ -107,7 +107,7 @@ test("BR-UI v1: 独立した3画面で入室・早押し・採点・司会交代
     }
     expect(errors).toEqual([]);
   } finally {
-    await Promise.all(contexts.map((context) => context.close()));
+    await closeAppContexts(contexts);
   }
 });
 

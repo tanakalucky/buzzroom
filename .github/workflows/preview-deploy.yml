@@ -93,4 +93,4 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           printf 'preview=%s\nhead=%s\nbase=%s\nrun=%s/%s/actions/runs/%s/attempts/%s\n' "$PREVIEW_NAME" "$HEAD_SHA" "$BASE_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
-          echo '公式 deploy 出力から URL/deployment version を照合し、docs/development-loop.md の hosted UI E2E を追跡する。deploy 成功だけでは E2E 成功にしない。' >> "$GITHUB_STEP_SUMMARY"
+          echo '完了後は preview-e2e-dispatch が公式 API で URL/version を照合し、GitHub API で hosted UI E2E を起動する。deploy 成功だけでは E2E 成功にしない。' >> "$GITHUB_STEP_SUMMARY"

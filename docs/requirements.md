@@ -37,7 +37,7 @@ PR の段階分割と進捗は [plan.md](plan.md) を参照。
 
 ### 現在(公式 vinext Cloudflare スターターを基盤に機能を追加)
 
-- `app/` - vinext App Router のルート、SSRでのルーム・セッション検証、Server Actionsの接続、レイアウトと全体スタイル。`app/api/hello` はスターター付属のAPI例として保持。
+- `src/app/` - vinext App Router のルート、SSRでのルーム・セッション検証、Server Actionsの接続、レイアウトと全体スタイル。`src/app/api/hello` はスターター付属のAPI例として保持。
 - `vite.config.ts` / `next.config.ts` - ビルド設定。スターターのまま未変更。
 - `cloudflare.config.ts` - 既存の本番・Previewのドメイン分岐を保持。同WorkerのRoomDO公開、SQLite binding、room/server/entry.tsへの入口を追加。
 

@@ -8,6 +8,9 @@
 - `.github/workflows/preview-deploy.yml` - PR の作成・更新(`opened` / `synchronize` / `reopened`)で、owner 本人かつ同一リポジトリの PR に限り `cf previews deploy pr-<PR番号> --prebuilt` で Worker Preview を作成・更新する。build は `CLOUDFLARE_PREVIEW_BUILD=true` を付けて実行し、`cloudflare.config.ts` の `isPreview` を true にする。
 - `.github/workflows/preview-cleanup.yml` - PR が閉じられたら(`pull_request_target`)、ピン留めした `wrangler@4.149.0` の `wrangler preview delete` で Preview を削除する。base 側のコードで動き、PR のコードは実行しない。
 
+- `.github/workflows/preview-e2e-dispatch.yml` - `preview-deploy` 完了成功後、公式 API で同じ head/version を照合し、GitHub API で Hosted E2E を起動する。
+- `.github/workflows/preview-e2e.yml` - `workflow_dispatch` で受け付け、照合済みの immutable Preview URL に Playwright を接続する。起動条件・最小権限・初回導入と復旧は [開発ループ](development-loop.md#preview-完了後の-github-api-起動) を参照する。
+
 ## 本番の公開先
 
 本番の公開先は `buzzroom.tanakalucky.com` に決定した。`cloudflare.config.ts` は `isPreview` が false の場合(通常 build)のみ `domains: ["buzzroom.tanakalucky.com"]` と `workersDev: false` を設定し、Preview build(`isPreview` が true)の出力にはこれらを含めない。
@@ -34,4 +37,4 @@ RoomDOは同Worker内にSQLite-backedとして実装し、ローカルで検証�
 
 ## 同じ head の品質確認
 
-CI の実 checkout SHA、Preview の公式 URL/version、Access 認証後の手動 UI E2E と merge 前照合は [開発ループ](development-loop.md) に従う。CI のローカル UI E2E は hosted の認証・配備確認と区別する。
+CI の実 checkout SHA、Preview の公式 URL/version、GitHub API 起動の hosted UI E2E と merge 前照合は [開発ループ](development-loop.md) に従う。CI のローカル UI E2E は hosted の認証・配備確認と区別する。

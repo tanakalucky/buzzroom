@@ -20,79 +20,96 @@ UI E2E は通常 build 後、`npx --no-install playwright install chromium` と 
 結果 JSON は Git 管理外の `test-results/e2e.json`、CI では head/attempt 付き artifact に保存する。
 テスト結果を同じ branch に commit して対象 head を変えない。
 
-## Preview 完了から hosted UI E2E への引渡し
+## Preview 完了後の GitHub API 起動
 
-CI と preview-deploy は別 workflow。両方の run URL・attempt・実結果を同じ最終 PR head に照合する。
-preview-deploy は直前にも PR の open/head を確認し、既存 `cf previews deploy pr-N --prebuilt` を使う。
-cf beta.14 は `workers/commit_sha` を checkout ではなく `GITHUB_SHA` 優先で採用するため、
-deploy step は期待 PR head と実 checkout SHA を照合し、cf 子プロセスだけにその SHA を渡す。
-workflow 全体の event SHA は変更しない。公式 API の deployment annotation `workers/commit_sha` も PR head と一致することを確認する。
-公式 deploy 出力と summary を取得し、公式 API/CLI の実結果から Preview URL と immutable deployment URL・version ID を確定する。
-URL の文字列を推測して成功証拠にしない。CLI が構造化結果を返さない場合はrepo最上位の指揮者が公式結果を読取照合する。
+`preview-deploy` が完了すると、default branch の `preview-e2e-dispatch.yml` が成功結果を確認し、
+GitHub REST API の `workflow_dispatch` で `preview-e2e.yml` を `main` ref に起動する。
+CI のローカル E2E は引き続き速い回帰確認に使い、実 Preview の E2E 成功とは区別する。
 
-`pr-N` URL は更新可能なので、E2E の前後で PR head とその Preview の deployment version を再取得し、
-同じ head/deployment であることを確認する。既存 Preview QA の VERSION は追加の照合に利用できるが、
-`/__qa` の native DO 検査をブラウザ UI E2E の代わりにはしない。
+dispatcher と対象照合は `tools/preview/` に置く。PR のコードや依存関係を実行しない job で、
+次を GitHub / Cloudflare の公式 API から取得する。
 
-### 着手前の能力確認
+- 元 run の repository・workflow path・event・最新 attempt・成功結果と owner の起動/再実行。
+  workflow 全体が成功でも `Preview の deploy` step が skipped なら起動しない。
+- 最新の open PR、同一 repository の head SHA、Preview `pr-N` の最新 deployment。
+- Preview の `workers/commit_sha` と PR head、公式応答中の Preview URL・immutable deployment URL。
+  本番 URL、任意のホスト、認証情報/query を含む URL は受け入れない。
 
-シナリオ操作を始める前に、実行担当が既存の手段・権限で行える範囲と不足を対象 PR に短く記録する。
-既知の能力結果は対象 URL・head/deployment・利用手段との整合を確認して再利用し、完全なシナリオを二重実行しない。
-未確認は未確認のまま残し、記入だけで操作可能・検証成功とはしない。
+cf beta.14 は `workers/commit_sha` を `GITHUB_SHA` 優先で採用するため、既存 deploy step は
+期待 PR head と checkout SHA を照合し、cf 子プロセスだけにその SHA を渡す。
+URL を組み立てただけでは配備証拠にせず、公式 API が返す URL との完全一致を必須にする。
 
-```text
-確認日時・実行者 / 記録先（PRコメントまたは非秘密artifact）
-対象PR head / 公式Preview・deployment URL・version / workers/commit_shaとの一致
-独立3クライアント（司会＋参加者2人）の既存手段・セッション分離の方法 / 可・不可・未確認
-対象URLを既存Accessで表示できるか / 可・不可・未確認と根拠
-320px・390pxそれぞれの表示・操作手段 / 可・不可・未確認と不足
-再利用した既知結果への参照・対象との整合 / 今回確認した範囲
-実行可能なBR-UI/1項目 / 未対応項目・未完了の品質条件 / 代替判断が必要な対象
-結果の記録手段 / 停止理由・必要な判断・引渡し先（なければなし）
-```
+### 起動契約と信頼境界
 
-能力情報の不足だけを理由に全作業を止めず、独立して行える確認は進める。
-既存認証済みブラウザが使えない場合など、実際に満たせない品質条件は blocker として引き渡し、成功にしない。
-新しい権限・認証・Access設定・aliasを作らず、Cookie/tokenの抽出・移送や拒否の迂回もしない。
-既存許可の再承認や新たな必須承認gateは追加せず、代替やHosted免除は自動判断しない（文書のみの変更も同様）。
-PR #4限定のCI mobile代替承認を他の実行に流用せず、既知の制限の再確認を新規発見や一般的な改善効果としない。
+API 入力は `source_run_id`・`source_run_attempt`・`pr_number`・`head_sha`・`deployment_id` の5つ。
+URL は入力から受け取らない。receiver は `main` 以外の ref を拒否し、実行前にも同じ照合を行う。
+workflow と checker は `github.workflow_sha`、テストコードだけは照合済み PR head を checkout する。
 
-### シナリオと結果の記録
+- `actions: write` は API dispatch 専用 job だけで使う。新しい PAT や永続 credential は不要。
+- 既存 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` は trusted checker の GET にだけ使い、
+  PR コード・npm・Playwright を実行する E2E job へ渡さない。
+- E2E job の GitHub 権限は `contents: read`、checkout は `persist-credentials: false`。
+  既存 owner 限定 build/deploy 同一 job の信頼モデルを変更・隔離済みとは扱わない。
+- Access 設定・Service Token・CI secret を追加しない。既存の認証が必要な対象は preflight が
+  redirect・401/403・アプリ以外の応答で失敗し、Cookie/token を抽出・移送して通過させない。
 
-既存 Access に認証済みのブラウザから、架空名の専用テストルームで次のシナリオを確認する。
-根拠は [既存仕様](requirements.md)、[機能仕様](features/room.md)、[既存 hosted 操作](hosted-qa.md)。
-アプリの新機能・仕様変更のためのシナリオではなく、動作維持の検証である。
+新しい workflow は default branch に登録されてから利用できる。初回導入 PR の段階で
+自動 dispatch が動かないことを、Hosted E2E 成功や適用免除として扱わない。
+merge・権限変更・新認証の登録には、それぞれの操作の許可が必要。
 
-| ID/版              | UI 操作と期待結果                                                                  | ローカルケース/hosted 記録                  |
-| ------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------- |
-| BR-UI/1 entry      | 作成・招待 URL の gate・誤パスワード拒否・再試行・独立2参加者、3画面の人数一致     | tools/e2e/game.spec.ts / 同項目の実画面結果 |
-| BR-UI/1 buzzer     | 2参加者の順序、誤答後の順位維持とロック、reload 復元、正解で次ラウンド、手動 reset | 同上 / 同項目の実画面結果                   |
-| BR-UI/1 score-host | 得点編集の全画面反映、司会交代、司会切断時の復帰待ちと本人復帰                     | 同上 / 同項目の実画面結果                   |
-| BR-UI/1 mobile     | 320/390px で横にはみ出さず参加者の早押しボタンが表示                               | 同上 / 同項目の実画面結果                   |
+### 実行と結果
 
-repo最上位の指揮者は対象 PR に以下の非秘密の記録を残し、全項目を同じ最終 head に照合する。
+Playwright は公式の immutable deployment URL に接続し、ローカルのアプリサーバーを起動しない。
+最初に `/api/hello` のアプリ応答を確認し、別ブラウザ context の独立3クライアントで
+架空名の専用テストルームを作る。既存ユーザーのルームや本番には操作しない。
+全 context で HTTP・WebSocket の送信先を検証済み Preview origin に限定する。
+ブラウザ専用のローカル proxy が redirect 後も HTTP の origin / CONNECT の送信先を接続前に検証する。
+ブラウザ本来の Cookie・POST・redirect 処理を維持し、service worker と proxy の loopback bypass を無効にする。
+HTTPS tunnel の origin を固定するため、この E2E の Chromium は HTTP/2 と QUIC を無効にする。
+本番や別 origin への要求は送信前に遮断し、そのケースを失敗にする。
+24時間の期限は参加者セッションの期限であり、ルームや得点の削除期限ではない。
+ルームの運用期限は未決のため、テストルームは Preview cleanup まで残る可能性がある。
+追加の削除 API や既存ルームの削除は行わない。
 
-```text
-repository / branch / PR / 固定base / PR head / 実checkout SHA
-CI run URL・attempt・結果 / preview run URL・attempt・結果
-Preview URL / deployment URL / deployment version / E2E前後のhead・version確認
-BR-UI/1 の各項目・実行者・実行日時・対象URL・結果 / E2E記録URL
-独立3観点・ラウンド・対象SHA・P0/P1/未分類/未完了
-```
+| ID/版              | 操作と期待結果                                                          | ケース                    |
+| ------------------ | ----------------------------------------------------------------------- | ------------------------- |
+| BR-UI/1 entry      | 作成・招待 gate・誤パスワード拒否・再試行・独立2参加者、3画面の人数一致 | tools/e2e/game.spec.ts    |
+| BR-UI/1 buzzer     | 2参加者の順序・誤答ロック・reload 復元・正解と手動 reset                | 同上                      |
+| BR-UI/1 score-host | 得点編集の全画面反映・司会交代・切断時の復帰待ちと本人復帰              | 同上                      |
+| BR-UI/1 mobile     | 320/390px で横にはみ出さず早押しボタンが見える                          | 同上                      |
+| BR-UI/1 room-ui    | URL コピー成功/失敗・入力中の早押し非表示・存在しないルームからの復帰   | tools/e2e/room-ui.spec.ts |
 
-記録は PR コメントまたは artifact に保存する。画像は架空名と公開ゲーム状態だけに限定し、
-認証 Cookie・token・生ヘッダー・私的な会話・内部 automation 本文は記録しない。
-Access ログイン画面、未実行、skipped、対象不一致を成功としない。
-Cloudflare deploy token は Access 通過資格ではない。機械認証が存在しなければ hosted は手動で確認し、
-既存認証済みブラウザを利用できない場合は blocker として停止する。
-Service Token・Service Auth policy・CI secret・Access 許可を追加して通過させない。
+これらは [既存仕様](requirements.md)・[ルーム仕様](features/room.md) に基づく動作維持の検証。
+ローカルと hosted は同じケースを使い、baseURL だけを切り替える。手動確認が必要な場合も
+同じシナリオ・対象 SHA/version と既存の許可済み手段を使い、未実行を成功へ置き換えない。
 
-通常 PR で進め、repo最上位の指揮者がmerge直前に期待headを再取得する。
-CI・Preview・hosted UI E2E・独立3観点の同SHA完了とP0/P1収束、未分類・未完了なしを照合し、対象repo/branch・merge操作の現在有効な本人許可と安全・権限条件がすべて成立する場合だけ、既存の承認済み手段で期待headを指定してmergeを判断・実行する。
-条件不足や拒否では停止し、別経路・別担当で迂回しない。実装者子・レビュー担当はmerge/deployを行わず、本番deployと認証・security・権限変更は別の安全境界に従う。
-これは運用ゲートであり、全員への技術的な強制や branch protection の保証ではない。
-head 変更時は以前の成功を流用しない。本番は新 main の CI/deploy の成功後、`/`・`/api/hello`・`/__qa` の404を read-only で確認する。
-本番で QA を有効化したり、検証用ゲームデータを書き込んだりしない。
+E2E 後は別の trusted job が PR open/head と Preview の最新 version を再確認する。
+途中で push・close・再deploy があれば成功にせず、最新 Preview の E2E を追跡する。
+`/__qa` は UI E2E の代わりに使わず、本番で有効化しない。
+
+summary と `preview-target-<run>-<attempt>` artifact に PR head・URL・version・元 deploy run/attempt、
+`preview-e2e-<head>-<run>-<attempt>` に非秘密のテスト結果 JSON を保存する。
+trace・HAR・video・screenshot・storageState・Cookie・token は保存しない。
+workflow 自体は main 上で動くため、その GitHub head SHA を PR 検証対象と誤認せず、
+artifact の `head_sha` と実 checkout SHA を PR head に照合する。
+
+### 重複・失敗と復旧
+
+同じ deploy run/attempt の dispatcher は直列化し、E2E run 一覧を全ページ読み、
+`Preview E2E <source_run_id>/<source_run_attempt>` があれば重複起動しない。
+同じ PR の E2E も直列化する。GitHub concurrency は処理順や exactly-once を保証しないため、
+receiver の実行前後の状態確認も必須とする。
+
+API POST の通信失敗は成否不明として停止し、自動再送しない。Actions の上記 run-name を
+確認してから再開する。既存 run の失敗はその run を再実行し、古い source attempt や
+head/version の不一致では最新 Preview deploy を確認する。Access や権限の不足は
+設定を勝手に広げず報告する。skipped・キャンセル・未実行も成功に数えない。
+
+repo 最上位の指揮者は CI・独立3観点・Preview・Hosted E2E を同じ最終 PR head に照合する。
+head 変更時は過去の成功を流用しない。merge は対象 repo/branch と現在の明示許可・全品質条件・
+安全条件が成立した場合だけ行う。実装者子・レビュー担当は merge/deploy を行わない。
+本番は新 main の CI/deploy 成功後、`/`・`/api/hello`・`/__qa` の404を read-only で確認し、
+検証用ゲームデータを書き込まない。
 
 ## 既存実行と週次2系統の接続契約
 

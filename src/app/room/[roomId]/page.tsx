@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
-import { roomStub } from "../../../src/features/room/server/binding";
+import { roomStub } from "../../../features/room/server/binding";
 import { notFound } from "next/navigation";
-import { cookieName, hashToken, isRoomId } from "../../../src/features/room/server/security";
-import { joinRoom } from "../../../src/features/room/server/actions";
-import { RoomGate, RoomScreen } from "../../../src/views/room";
+import { cookieName, hashToken, isRoomId } from "../../../features/room/server/security";
+import { joinRoom } from "../../../features/room/server/actions";
+import { RoomGate, RoomScreen } from "../../../views/room";
 
 export default async function RoomPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
