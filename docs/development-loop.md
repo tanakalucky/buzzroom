@@ -1,7 +1,7 @@
 # 開発ループの接続と品質確認
 
 対象は `tanakalucky/buzzroom`。配布元 `tanakalucky/ai-dev-config` の固定版
-`83601d2e9e5293bbb72db8356657ed8f2f180237`（PR #32）から6配布物を統合する。
+`8b9dabdc34eb493be5bd061d0c439590552c4099`から6配布物を統合する。
 配布対象は `AGENTS.md`・`CLAUDE.md`・`.ai-config/`・`.agents/`・`.claude/`・`.codex/agents/`。
 役割の直接委譲と受け渡しは [共通契約](../.ai-config/workflows/agent-handoff.md) に従う。
 共通手順は `.ai-config/`、アプリの仕様は requirements/features、コマンドは package.json を正本とする。
@@ -11,7 +11,7 @@
 CI は PR の merge ref ではなく実際の head を checkout し、その SHA を照合する。
 既存 lint・整形・型生成・型検査・通常 build・単体/DO/HTTP テストに加え、
 Python 標準の構造テストと `npm run test:e2e` を実行する。
-構造テストは配布物の参照・入口・定義を確認し、実モデルの委譲や外部操作の成功を保証しない。
+アプリ固有の構造テストは配布物の参照・入口・定義を確認し、実モデルの委譲や外部操作の成功を保証しない。
 
 UI E2E は通常 build 後、`npx --no-install playwright install chromium` と `npm run test:e2e` で実行する。
 既存 Chromium を使う場合は `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` にその実行ファイルを指定できる。
