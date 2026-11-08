@@ -3,9 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BuzzerButton, type BuzzerStatus } from "../../../features/buzz";
 import { ScoreEditor } from "../../../features/edit-score";
 import { useRoomConnection } from "../model/use-room-connection";
+import { useRoomSound } from "../model/use-room-sound";
 
 export function RoomScreen({ roomId }: { roomId: string }) {
-  const { state, you, connection, pending, error, send } = useRoomConnection(roomId);
+  const sound = useRoomSound();
+  const { state, you, connection, pending, error, send } = useRoomConnection(roomId, sound.play);
   const [copy, setCopy] = useState("");
   const [copyFailed, setCopyFailed] = useState(false);
   const [url, setUrl] = useState("");
@@ -62,9 +64,25 @@ export function RoomScreen({ roomId }: { roomId: string }) {
             <span className="host-name">
               出題者 <strong title={host?.name}>{host?.name ?? "確認中"}</strong>
             </span>
+            <button
+              aria-pressed={sound.status === "on"}
+              disabled={sound.status === "starting"}
+              onClick={sound.status === "on" ? sound.disable : sound.enable}
+            >
+              {sound.status === "on"
+                ? "音をオフ"
+                : sound.status === "starting"
+                  ? "音を準備中"
+                  : "音をオン"}
+            </button>
             <button onClick={copyUrl}>URLをコピー</button>
           </div>
         </header>
+        {sound.status === "unavailable" && (
+          <p className="form-error" role="status">
+            音を再生できませんでした。ゲームは続けられます。「音をオン」で再試行してください。
+          </p>
+        )}
         {copy && (
           <p className="copy-status" role="status">
             {copy}

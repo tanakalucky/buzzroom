@@ -2,7 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { initialBuzzer, judgeAnswer, pressBuzzer, resetRound } from "../../../entities/room";
 import { awardAnswer, isScore } from "../../../entities/room";
 import { validateDisplayName } from "../../../entities/room";
-import type { RoomState, Snapshot, ServerMessage } from "../../../entities/room";
+import type { RoomState, Snapshot, ServerMessage, RoomSound } from "../../../entities/room";
 import {
   hashToken,
   isRoomId,
@@ -151,7 +151,7 @@ export class RoomDO extends DurableObject {
       ws.close(1011, "Connection unavailable");
     }
   }
-  private broadcast() {
+  private broadcast(sound?: RoomSound) {
     const state = this.load();
     if (!state) return;
     const snapshot = this.snapshot(state);
@@ -162,7 +162,12 @@ export class RoomDO extends DurableObject {
         ws.close(1008, "Session expired");
         continue;
       }
-      this.send(ws, { type: "snapshot", state: snapshot, you: s.participantId });
+      this.send(ws, {
+        type: "snapshot",
+        state: snapshot,
+        you: s.participantId,
+        ...(sound ? { sound } : {}),
+      });
     }
   }
   private async scheduleExpiry() {
@@ -243,6 +248,7 @@ export class RoomDO extends DurableObject {
       this.broadcast();
       return;
     }
+    let sound: RoomSound | undefined;
     if (command.type === "buzz") {
       const next = pressBuzzer(
         state.buzzer,
@@ -254,6 +260,7 @@ export class RoomDO extends DurableObject {
         return;
       }
       state.buzzer = next;
+      sound = "buzz";
     } else {
       if (session.participantId !== state.hostId) {
         reject("forbidden", "この操作は出題者だけが行えます。");
@@ -277,6 +284,7 @@ export class RoomDO extends DurableObject {
           }
           Object.assign(target, score);
           state.buzzer = judgeAnswer(state.buzzer, command.correct);
+          sound = command.correct ? "correct" : "wrong";
           break;
         }
         case "reset":
@@ -310,7 +318,7 @@ export class RoomDO extends DurableObject {
     }
     state.revision++;
     this.save(state); // 同期SQLite書き込みが完了してから配信。受信処理間でawaitしない。
-    this.broadcast();
+    this.broadcast(sound);
   }
   webSocketClose(ws: WebSocket) {
     ws.close(1000, "Connection closed");

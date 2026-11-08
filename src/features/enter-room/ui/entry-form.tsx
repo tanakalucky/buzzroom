@@ -10,9 +10,13 @@ export function EntryForm({
   joining?: boolean;
 }) {
   const [result, formAction, pending] = useActionState(action, { error: "" });
+  const [hydrated, setHydrated] = useState(false);
   const [show, setShow] = useState(false);
   const [name, setName] = useState("");
   const form = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
   useEffect(() => {
     if (result.error) {
       const field = result.field;
@@ -27,6 +31,7 @@ export function EntryForm({
       <input
         id="name"
         name="name"
+        disabled={!hydrated}
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="クイズで使う名前"
@@ -46,12 +51,18 @@ export function EntryForm({
           id="password"
           name="password"
           type={show ? "text" : "password"}
+          disabled={!hydrated}
           autoComplete={joining ? "current-password" : "new-password"}
           required
           aria-invalid={result.field === "password"}
           aria-describedby="password-help entry-error"
         />
-        <button type="button" onClick={() => setShow(!show)} aria-pressed={show}>
+        <button
+          type="button"
+          disabled={!hydrated}
+          onClick={() => setShow(!show)}
+          aria-pressed={show}
+        >
           {show ? "隠す" : "表示"}
         </button>
       </div>
@@ -63,7 +74,7 @@ export function EntryForm({
       <p role="alert" id="entry-error" className="form-error">
         {result.error}
       </p>
-      <button className="primary-button" disabled={pending}>
+      <button className="primary-button" disabled={!hydrated || pending}>
         {pending ? "確認しています…" : joining ? "入室する" : "ルームをつくる"}{" "}
         <span aria-hidden="true">→</span>
       </button>

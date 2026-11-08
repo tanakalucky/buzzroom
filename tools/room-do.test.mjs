@@ -153,6 +153,10 @@ test(
       );
       assert.deepEqual(ordered.state.buzzer.order, [a, b]);
       assert.equal(new Set(ordered.state.buzzer.order).size, 2);
+      assert.deepEqual(
+        host.messages.filter((m) => m.sound).map((m) => m.sound),
+        ["buzz", "buzz"],
+      );
       host.send({ type: "judge", round: 1, targetId: a, correct: false });
       host.send({ type: "judge", round: 1, targetId: a, correct: false });
       const wrong = await host.until(
@@ -162,11 +166,16 @@ test(
       assert.deepEqual(wrong.state.buzzer.queue, [b]);
       assert.equal(wrong.state.participants.find((p) => p.id === a).wrong, 1);
       await host.until((m) => m.code === "stale");
+      assert.deepEqual(
+        host.messages.filter((m) => m.sound).map((m) => m.sound),
+        ["buzz", "buzz", "wrong"],
+      );
       one.ws.close();
       const resumed = client(endpoint, cookies[1]);
       clients.push(resumed);
       const recovered = await resumed.until((m) => m.type === "snapshot");
       assert.equal(recovered.you, a);
+      assert.equal(recovered.sound, undefined);
       assert.deepEqual(recovered.state.buzzer.blocked, [a]);
       assert.deepEqual(recovered.state.buzzer.order, [a, b]);
       resumed.send({ type: "buzz", round: 1 });
@@ -174,6 +183,7 @@ test(
       host.send({ type: "judge", round: 1, targetId: b, correct: true });
       const correct = await host.until((m) => m.type === "snapshot" && m.state.buzzer.round === 2);
       assert.deepEqual(correct.state.buzzer.order, []);
+      assert.equal(correct.sound, "correct");
       assert.equal(correct.state.participants.find((p) => p.id === b).correct, 1);
       host.send({ type: "reset", round: 2 });
       host.send({ type: "reset", round: 2 });
@@ -190,6 +200,10 @@ test(
       await host.until((m) => m.code === "forbidden");
       two.send({ type: "buzz", round: 3 });
       await two.until((m) => m.code === "unavailable");
+      assert.deepEqual(
+        host.messages.filter((m) => m.sound).map((m) => m.sound),
+        ["buzz", "buzz", "wrong", "correct"],
+      );
       host.send({ type: "buzz", round: 3 });
       await host.until((m) => m.type === "snapshot" && m.state.buzzer.queue[0] === initial.hostId);
       two.ws.close();
@@ -223,6 +237,7 @@ test(
         false,
       );
       assert.equal(persisted.you, b);
+      assert.equal(persisted.sound, undefined);
       assert.equal(persisted.state.hostId, b);
       assert.equal(persisted.state.participants.find((p) => p.id === a).correct, 5);
       assert.deepEqual(persisted.state.buzzer.queue, []);
