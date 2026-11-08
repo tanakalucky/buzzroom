@@ -2,8 +2,8 @@
 
 ## 最上位セッションと外部の依頼
 
-CoordinatorはAIでも人間でも担える人間の代役。日次のIssue確認・整理とIssue担当への依頼、週次repo担当への依頼を行う。
-依頼受理後の調査・集計・記録・品質・停止再開はrepo側で完結し、細かな進行管理をCoordinatorへ戻さない。
+CoordinatorはAIでも人間でも担える人間の代役。日次のIssue確認・整理、Issue担当と週次repo担当への依頼、本人への質問・結果の受け渡しを行う。
+依頼受理後の調査・集計・記録・品質・停止再開はrepo側で完結する。条件成立時のmerge判断・実行もIssue側の指揮者が担い、Coordinatorへ戻さない。
 既存UIで依頼と既存実行を確認し、同じIssueやrunの新規重複起動をしない。日次監視のrepo内強制移植や常駐サーバーは不要。
 
 repo側の**最上位実行セッション**が次のskillを実行する。これらのまとめ役を専門subagentとして入れ子にしない。
@@ -11,7 +11,7 @@ repo側の**最上位実行セッション**が次のskillを実行する。こ�
 
 | 最上位の担当 | 実行するskill・正本 | 入力 | 終了条件・次の担当 |
 | --- | --- | --- | --- |
-| Issueオーケストレーター | `development-orchestrator` / [Issue手順](development-orchestrator.md) | repository/Issue、依頼範囲・出典・許可、既存実行への参照 | 受理後の調査・本人確認・実装委譲・レビュー・同head品質・結果保存まで管理。必要な質問と再開先だけ外部へ返す |
+| Issueオーケストレーター（指揮者） | `development-orchestrator` / [Issue手順](development-orchestrator.md) | repository/Issue、依頼範囲・出典・許可、既存実行への参照 | 受理後の調査・本人確認・実装委譲・レビュー・同head品質を管理。現在有効な対象限定許可と全品質・安全・権限条件の成立時だけmergeを判断・実行し結果を保存。必要な質問と再開先を外部へ返す |
 | 週次repo担当 | `weekly-discovery` / [課題発見](weekly-discovery.md) | repository、週範囲/timezone、既存run、許可範囲 | 調査・全票・Discussion記録・採用Issueの保存確認まで。Coordinatorが日次でIssue担当へ依頼する |
 | 週次repo担当（改善） | `development-improvement` / [改善](development-improvement.md) | 分析期間・3種類の記録・既存run、改善Issue/事前指標 | 分析・採用Issue保存、実施後は同Issueの効果比較と次回確認。実装を直接起動しない |
 
@@ -38,6 +38,7 @@ repo側の**最上位実行セッション**が次のskillを実行する。こ�
 共通入力はrepository、依頼ID/既存実行、対象・版、必要な規約の本文/参照、許可・禁止範囲、出典、停止条件。
 関連リンクは自動展開を前提にせず全文読む。規約不足・必要な判断・利用不能は未完了として返す。
 実装者へは書込範囲を限定する。調査・分析・投票・レビュー役は読取専用で投稿・起票・承認・mergeを行わない。
+実装者子もmerge/deployを行わない。最上位の指揮者によるmerge判断・実行は[Issue手順の品質・権限条件](development-orchestrator.md#4-最終-head-の品質条件)に従い、これらの子の禁止とは役割を分ける。
 最上位が許可された外部保存を行い、未保存本文・結果不明・再開先を保持する。
 
 独立投票は全5人完了・同候補/版・1人1票・理由を確認して3賛成以上を採用する。

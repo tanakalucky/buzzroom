@@ -1,6 +1,6 @@
 ---
 name: development-orchestrator
-description: 1つのIssueの調査・本人確認・実装委譲・PR・独立レビュー・最終SHAの品質確認を進める
+description: repo最上位の指揮者としてIssueの進行・品質照合と、対象限定許可・全条件成立時のmerge判断を担う
 ---
 
 # development-orchestrator
