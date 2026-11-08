@@ -61,15 +61,18 @@ test("BR-SOUND-CLARITY/1: 端末別オン・受理ごとの3音・連打禁止�
     for (const page of [host, one]) await expect.poll(() => notes(page)).toEqual([880, 880, 880]);
     expect(await notes(two)).toEqual([]);
 
+    // AudioParamはfloat32で保持するため、期待値も同じ精度にそろえて順序・件数ごと比較する。
     await host.getByRole("button", { name: "× 不正解", exact: true }).click();
     await expect(one.getByRole("button", { name: /このターンはお休み/ })).toBeDisabled();
     for (const page of [host, one])
-      await expect.poll(() => notes(page)).toEqual([880, 880, 880, 146.83, 130.81]);
+      await expect
+        .poll(() => notes(page))
+        .toEqual([880, 880, 880, 146.83, 130.81].map(Math.fround));
     await host.getByRole("button", { name: "○ 正解", exact: true }).click();
     for (const page of [host, one])
       await expect
         .poll(() => notes(page))
-        .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51]);
+        .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51].map(Math.fround));
 
     for (const page of [host, one]) {
       expect(
@@ -81,13 +84,15 @@ test("BR-SOUND-CLARITY/1: 端末別オン・受理ごとの3音・連打禁止�
     await one.getByRole("button", { name: /早押し！/ }).click();
     await expect
       .poll(() => notes(host))
-      .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880]);
-    expect(await notes(one)).toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51]);
+      .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880].map(Math.fround));
+    expect(await notes(one)).toEqual(
+      [880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51].map(Math.fround),
+    );
     await expect(one.getByRole("button", { name: /あなたに回答権があります/ })).toBeDisabled();
     await one.getByRole("button", { name: "音をオン", exact: true }).click();
     await expect
       .poll(() => notes(one))
-      .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880]);
+      .toEqual([880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880].map(Math.fround));
 
     // 同じページのWebSocketだけを一度閉じ、音オンを保った自動再接続を観測する。
     await host.evaluate(() => {
@@ -100,9 +105,9 @@ test("BR-SOUND-CLARITY/1: 端末別オン・受理ごとの3音・連打禁止�
     await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
     await expect(host.getByText("再接続しています", { exact: true })).toBeVisible();
     await expect(host.getByText("● 接続中", { exact: false })).toBeVisible();
-    expect(await notes(host)).toEqual([
-      880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880,
-    ]);
+    expect(await notes(host)).toEqual(
+      [880, 880, 880, 146.83, 130.81, 659.25, 987.77, 1318.51, 880].map(Math.fround),
+    );
     await one.reload();
     await expect(one.getByRole("button", { name: "音をオン", exact: true })).toBeVisible();
     expect(await notes(one)).toEqual([]);
