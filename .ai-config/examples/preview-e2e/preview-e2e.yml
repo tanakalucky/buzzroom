@@ -1,0 +1,124 @@
+# Copy to .github/workflows/preview-e2e.yml after implementing the adapter.
+name: Preview E2E
+run-name: Preview E2E / source ${{ inputs.source_run_id }} attempt ${{ inputs.source_run_attempt }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Successful preview-deploy run ID
+        required: true
+        type: string
+      source_run_attempt:
+        description: Successful source run attempt
+        required: true
+        type: string
+      pr_number:
+        description: Open pull request number
+        required: true
+        type: string
+      head_sha:
+        description: Full current PR head SHA
+        required: true
+        type: string
+      deployment_id:
+        description: Provider deployment or immutable version ID
+        required: true
+        type: string
+
+permissions: {}
+concurrency:
+  group: preview-e2e-${{ inputs.source_run_id }}-${{ inputs.source_run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    outputs:
+      preview_url: ${{ steps.preview.outputs.preview_url }}
+      version: ${{ steps.preview.outputs.version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - id: preview
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7.0.1
+        with:
+          retries: 0
+          script: |
+            const { verify } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/preview-e2e.mjs`);
+            const preview = await verify({ github, context });
+            core.setOutput('preview_url', preview.url);
+            core.setOutput('version', preview.version);
+
+  e2e:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx --no-install playwright install --with-deps chromium
+      # Define this command in the application's package.json. Do not start localhost.
+      - run: npm run test:e2e:preview
+        env:
+          CI: 'true'
+          PLAYWRIGHT_BASE_URL: ${{ needs.verify.outputs.preview_url }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ !cancelled() }}
+        with:
+          name: preview-e2e-${{ inputs.source_run_id }}-${{ inputs.source_run_attempt }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn
+
+  result:
+    needs: [verify, e2e]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7.0.1
+        env:
+          VERIFY_RESULT: ${{ needs.verify.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          EXPECTED_URL: ${{ needs.verify.outputs.preview_url }}
+          EXPECTED_VERSION: ${{ needs.verify.outputs.version }}
+        with:
+          retries: 0
+          script: |
+            if (process.env.VERIFY_RESULT !== 'success' || process.env.E2E_RESULT !== 'success') {
+              throw new Error('Preview verification or E2E did not succeed (including skipped/cancelled).');
+            }
+            const { verify } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/preview-e2e.mjs`);
+            const preview = await verify({ github, context });
+            if (preview.url !== process.env.EXPECTED_URL || preview.version !== process.env.EXPECTED_VERSION) {
+              throw new Error('Preview changed during E2E. Run against the new deployment.');
+            }
+            await core.summary.addHeading('Preview E2E passed')
+              .addRaw(`PR #${context.payload.inputs.pr_number}, head ${context.payload.inputs.head_sha}\n`)
+              .addRaw(`Source run ${context.payload.inputs.source_run_id}, attempt ${context.payload.inputs.source_run_attempt}\n`)
+              .addRaw(`Verified preview: ${preview.url}\nVersion: ${preview.version}\n`).write();

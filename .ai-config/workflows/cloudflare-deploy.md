@@ -46,6 +46,9 @@ preview と本番の build 出力・設定の混入を防ぎ、固定した CLI 
 成功した preview の URL/SHA を専用 Bot コメントへ作成・更新し、cleanup 後の表示も通常コードで管理する。
 利用者向け文書には用途・呼出方法・初期設定を記す。個別結果は PR または作業報告へ残す。
 
+Preview 完了後に GitHub API から E2E を起動する場合は、
+[実行 Actions サンプル](../examples/preview-e2e/README.md)を参照し、アプリの検証adapterとE2Eに接続する。
+
 ## 4. テストとレビューを行う
 
 通常コードで PR 識別、信頼境界、成果物の出所、最新 SHA、close/reopen、順序逆転、同時実行、
