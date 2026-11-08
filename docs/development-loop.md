@@ -63,7 +63,9 @@ Playwright は公式の immutable deployment URL に接続し、ローカルの�
 最初に `/api/hello` のアプリ応答を確認し、別ブラウザ context の独立3クライアントで
 架空名の専用テストルームを作る。既存ユーザーのルームや本番には操作しない。
 全 context で HTTP・WebSocket の送信先を検証済み Preview origin に限定する。
-HTTP redirect は自動追従せず Location を確認し、service worker を遮断する。
+ブラウザ専用のローカル proxy が redirect 後も HTTP の origin / CONNECT の送信先を接続前に検証する。
+ブラウザ本来の Cookie・POST・redirect 処理を維持し、service worker と proxy の loopback bypass を無効にする。
+HTTPS tunnel の origin を固定するため、この E2E の Chromium は HTTP/2 と QUIC を無効にする。
 本番や別 origin への要求は送信前に遮断し、そのケースを失敗にする。
 24時間の期限は参加者セッションの期限であり、ルームや得点の削除期限ではない。
 ルームの運用期限は未決のため、テストルームは Preview cleanup まで残る可能性がある。

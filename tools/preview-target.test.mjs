@@ -6,67 +6,6 @@ const sha = "a".repeat(40);
 const deploymentId = "12345678-1234-1234-1234-123456789abc";
 const input = { source_run_id: "123", source_run_attempt: "2" };
 
-function fixture() {
-  const run = {
-    id: 123,
-    run_attempt: 2,
-    path: ".github/workflows/preview-deploy.yml",
-    event: "pull_request",
-    status: "completed",
-    conclusion: "success",
-    head_sha: sha,
-    head_branch: "feature/test",
-    repository: { full_name: "tanakalucky/buzzroom" },
-    head_repository: { full_name: "tanakalucky/buzzroom" },
-    actor: { id: 39301079 },
-    triggering_actor: { id: 39301079 },
-  };
-  const pr = {
-    number: 15,
-    state: "open",
-    head: { sha, repo: { full_name: "tanakalucky/buzzroom" } },
-    base: { repo: { full_name: "tanakalucky/buzzroom" } },
-  };
-  const preview = {
-    name: "pr-15",
-    slug: "pr-15",
-    urls: ["https://pr-15-buzzroom.luckyyeslucky777.workers.dev"],
-  };
-  const deployment = {
-    id: deploymentId,
-    annotations: { "workers/commit_sha": sha },
-    urls: ["https://12345678-buzzroom.luckyyeslucky777.workers.dev"],
-  };
-  const jobs = [
-    {
-      name: "deploy",
-      conclusion: "success",
-      steps: [{ name: "Preview の deploy", conclusion: "success" }],
-    },
-  ];
-  const writes = [];
-  const state = { run, pr, preview, deployment, jobs, runs: [], writes };
-  const api = {
-    github: async (path, options) => {
-      if (options?.method === "POST") {
-        writes.push({ path, ...options });
-        return;
-      }
-      if (path === "/actions/runs/123") return state.run;
-      if (path === "/pulls/15") return state.pr;
-      throw new Error(`想定外のパス: ${path}`);
-    },
-    githubPages: async (path) => {
-      if (path.includes("/jobs")) return state.jobs;
-      if (path.startsWith("/pulls?")) return [state.pr];
-      if (path.includes("/runs?")) return state.runs;
-      throw new Error(`想定外の一覧: ${path}`);
-    },
-    cloudflare: async (path) => (path.endsWith("/latest") ? state.deployment : state.preview),
-  };
-  return { state, api };
-}
-
 test("成功した本人の deploy と現在の open head・公式 immutable URL を結び付ける", async () => {
   const { api } = fixture();
 
@@ -282,3 +221,64 @@ test("権限・認証エラーと redirect を成功として返さない", asyn
 
   await assert.rejects(api.github("/actions/runs/123"), /HTTP 403/);
 });
+
+function fixture() {
+  const run = {
+    id: 123,
+    run_attempt: 2,
+    path: ".github/workflows/preview-deploy.yml",
+    event: "pull_request",
+    status: "completed",
+    conclusion: "success",
+    head_sha: sha,
+    head_branch: "feature/test",
+    repository: { full_name: "tanakalucky/buzzroom" },
+    head_repository: { full_name: "tanakalucky/buzzroom" },
+    actor: { id: 39301079 },
+    triggering_actor: { id: 39301079 },
+  };
+  const pr = {
+    number: 15,
+    state: "open",
+    head: { sha, repo: { full_name: "tanakalucky/buzzroom" } },
+    base: { repo: { full_name: "tanakalucky/buzzroom" } },
+  };
+  const preview = {
+    name: "pr-15",
+    slug: "pr-15",
+    urls: ["https://pr-15-buzzroom.luckyyeslucky777.workers.dev"],
+  };
+  const deployment = {
+    id: deploymentId,
+    annotations: { "workers/commit_sha": sha },
+    urls: ["https://12345678-buzzroom.luckyyeslucky777.workers.dev"],
+  };
+  const jobs = [
+    {
+      name: "deploy",
+      conclusion: "success",
+      steps: [{ name: "Preview の deploy", conclusion: "success" }],
+    },
+  ];
+  const writes = [];
+  const state = { run, pr, preview, deployment, jobs, runs: [], writes };
+  const api = {
+    github: async (path, options) => {
+      if (options?.method === "POST") {
+        writes.push({ path, ...options });
+        return;
+      }
+      if (path === "/actions/runs/123") return state.run;
+      if (path === "/pulls/15") return state.pr;
+      throw new Error(`想定外のパス: ${path}`);
+    },
+    githubPages: async (path) => {
+      if (path.includes("/jobs")) return state.jobs;
+      if (path.startsWith("/pulls?")) return [state.pr];
+      if (path.includes("/runs?")) return state.runs;
+      throw new Error(`想定外の一覧: ${path}`);
+    },
+    cloudflare: async (path) => (path.endsWith("/latest") ? state.deployment : state.preview),
+  };
+  return { state, api };
+}

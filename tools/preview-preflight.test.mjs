@@ -2,24 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { verifyHostedPreview } from "./e2e/preflight.ts";
 
-function client(
-  status = 200,
-  contentType = "application/json",
-  body = { message: "Hello from vinext on Cloudflare Workers" },
-) {
-  return {
-    get: async (path, options) => {
-      assert.equal(path, "/api/hello");
-      assert.equal(options.maxRedirects, 0);
-      return {
-        status: () => status,
-        headers: () => ({ "content-type": contentType }),
-        json: async () => body,
-      };
-    },
-  };
-}
-
 test("実アプリの到達確認に成功してから UI シナリオへ進む", async () => {
   await verifyHostedPreview(client());
 });
@@ -40,3 +22,21 @@ test("別アプリのJSONを成功応答にしない", async () => {
     /一致しません/,
   );
 });
+
+function client(
+  status = 200,
+  contentType = "application/json",
+  body = { message: "Hello from vinext on Cloudflare Workers" },
+) {
+  return {
+    get: async (path, options) => {
+      assert.equal(path, "/api/hello");
+      assert.equal(options.maxRedirects, 0);
+      return {
+        status: () => status,
+        headers: () => ({ "content-type": contentType }),
+        json: async () => body,
+      };
+    },
+  };
+}

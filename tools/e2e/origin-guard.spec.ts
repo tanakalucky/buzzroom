@@ -6,19 +6,24 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
   browser,
 }) => {
   let externalRequests = 0;
+  let externalConnections = 0;
   let allowedPosts = 0;
   const external = createServer((_request, response) => {
     externalRequests++;
     response.end("unexpected");
   });
+  external.on("connection", () => externalConnections++);
   external.on("upgrade", (_request, socket) => {
     externalRequests++;
     socket.destroy();
   });
   const externalURL = await listen(external);
+  const externalTLSURL = externalURL.replace("http:", "https:");
   const app = createServer((request, response) => {
     if (request.url === "/safe-redirect") {
       response.writeHead(302, { Location: "/" }).end();
+    } else if (request.url === "/tls-redirect") {
+      response.writeHead(302, { Location: externalTLSURL }).end();
     } else if (request.url === "/chain") {
       response.writeHead(302, { Location: "/redirect" }).end();
     } else if (request.url === "/redirect" || request.url === "/post-redirect") {
@@ -54,7 +59,8 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
     for (const path of ["/redirect", "/chain"]) {
       const context = await createAppContext(browser, baseURL);
       const page = await context.newPage();
-      await expect(page.goto(path)).rejects.toThrow();
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(403);
       await expect(closeAppContexts([context])).rejects.toThrow("E2E は失敗");
     }
 
@@ -66,29 +72,39 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
         (form as HTMLFormElement).action = target;
       }, action);
       await Promise.all([
-        page.waitForEvent("requestfailed"),
+        page.waitForResponse((response) => response.status() === 403),
         page.getByRole("button", { name: "作成" }).click(),
       ]);
       await expect(closeAppContexts([context])).rejects.toThrow("E2E は失敗");
     }
 
-    const socketContext = await createAppContext(browser, baseURL);
-    const socketPage = await socketContext.newPage();
-    await socketPage.goto("/");
-    const socketResult = await socketPage.evaluate(
-      (url) =>
-        new Promise<string>((resolve) => {
-          const socket = new WebSocket(url.replace("http:", "ws:"));
-          socket.onclose = () => resolve("closed");
-          socket.onerror = () => resolve("error");
-          setTimeout(() => resolve("timeout"), 5000);
-        }),
-      externalURL,
-    );
-    expect(["closed", "error"]).toContain(socketResult);
-    await expect(closeAppContexts([socketContext])).rejects.toThrow("E2E は失敗");
+    const tlsContext = await createAppContext(browser, baseURL);
+    const tlsPage = await tlsContext.newPage();
+    await expect(tlsPage.goto("/tls-redirect")).rejects.toThrow();
+    await expect(closeAppContexts([tlsContext])).rejects.toThrow("E2E は失敗");
 
+    for (const socketURL of [
+      externalURL.replace("http:", "ws:"),
+      externalTLSURL.replace("https:", "wss:"),
+    ]) {
+      const socketContext = await createAppContext(browser, baseURL);
+      const socketPage = await socketContext.newPage();
+      await socketPage.goto("/");
+      const socketResult = await socketPage.evaluate(
+        (url) =>
+          new Promise<string>((resolve) => {
+            const socket = new WebSocket(url);
+            socket.onclose = () => resolve("closed");
+            socket.onerror = () => resolve("error");
+            setTimeout(() => resolve("timeout"), 5000);
+          }),
+        socketURL,
+      );
+      expect(["closed", "error"]).toContain(socketResult);
+      await expect(closeAppContexts([socketContext])).rejects.toThrow("E2E は失敗");
+    }
     expect(externalRequests).toBe(0);
+    expect(externalConnections).toBe(0);
   } finally {
     await Promise.all([close(app), close(external)]);
   }

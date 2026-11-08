@@ -19,9 +19,11 @@ export default defineConfig({
   use: {
     baseURL: hostedURL ?? "http://127.0.0.1:4173",
     browserName: "chromium",
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
-      : {},
+    launchOptions: {
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+      // CONNECT tunnel 内で別 origin の HTTP/2 connection coalescing を行わせない。
+      args: ["--disable-http2", "--disable-quic"],
+    },
     trace: "off",
     video: "off",
     screenshot: "off",
