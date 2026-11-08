@@ -1,13 +1,17 @@
 import { expect, test } from "@playwright/test";
+import { createAppContext, closeAppContexts } from "./origin-guard";
 
-test("移動した画面でURLコピーの成功・失敗と入室後の入力中非表示を維持する", async ({ browser }) => {
-  const hostContext = await browser.newContext();
-  const participantContext = await browser.newContext();
+test("移動した画面でURLコピーの成功・失敗と入室後の入力中非表示を維持する", async ({
+  browser,
+  baseURL,
+}) => {
+  const hostContext = await createAppContext(browser, baseURL);
+  const participantContext = await createAppContext(browser, baseURL);
   const host = await hostContext.newPage();
   const participant = await participantContext.newPage();
 
   try {
-    await host.goto("http://127.0.0.1:4173/");
+    await host.goto("/");
     await host.getByLabel("あなたの名前", { exact: false }).fill("コピー検証司会");
     await host.getByLabel("パスワード", { exact: false }).fill("copy-test-password");
     await host.getByRole("button", { name: "ルームをつくる", exact: false }).click();
@@ -55,13 +59,13 @@ test("移動した画面でURLコピーの成功・失敗と入室後の入力�
     await participant.getByRole("button", { name: "閉じる", exact: true }).click();
     await expect(buzzer).toBeVisible();
 
-    await participant.goto("http://127.0.0.1:4173/room/invalid");
+    await participant.goto("/room/invalid");
     await expect(
       participant.getByRole("heading", { name: "ルームが見つかりません" }),
     ).toBeVisible();
     await participant.getByRole("link", { name: "作成画面へ戻る" }).click();
     await expect(participant.getByRole("heading", { name: "ルームをつくる" })).toBeVisible();
   } finally {
-    await Promise.all([hostContext.close(), participantContext.close()]);
+    await closeAppContexts([hostContext, participantContext]);
   }
 });
