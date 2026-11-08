@@ -27,6 +27,7 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
         .end();
     } else if (request.method === "POST") {
       allowedPosts++;
+      response.setHeader("Content-Type", "text/html");
       response.end("saved");
     } else {
       response.setHeader("Content-Type", "text/html");
@@ -41,12 +42,13 @@ test("実ブラウザで別 origin の redirect・POST・WebSocket を送信前�
     const allowed = await createAppContext(browser, baseURL);
     try {
       const page = await allowed.newPage();
-      await page.goto("/safe-redirect");
-      await page.getByRole("button", { name: "作成" }).click();
+      await test.step("同じ origin の redirect", () => page.goto("/safe-redirect"));
+      await test.step("同じ origin の POST", () =>
+        page.getByRole("button", { name: "作成" }).click());
       await expect(page.locator("body")).toHaveText("saved");
       expect(allowedPosts).toBe(1);
     } finally {
-      await closeAppContexts([allowed]);
+      await test.step("許可 context の終了", () => closeAppContexts([allowed]));
     }
 
     for (const path of ["/redirect", "/chain"]) {

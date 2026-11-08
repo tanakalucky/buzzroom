@@ -14,10 +14,15 @@ function routeFixture(url, status = 200, location) {
   return {
     operations,
     route: {
-      request: () => ({ url: () => url }),
+      request: () => ({
+        url: () => url,
+        method: () => "GET",
+        allHeaders: async () => ({ origin }),
+      }),
       abort: async () => operations.push("abort"),
       fetch: async (options) => {
         assert.equal(options.maxRedirects, 0);
+        assert.deepEqual(options.headers, { origin });
         operations.push("fetch");
         return {
           status: () => status,

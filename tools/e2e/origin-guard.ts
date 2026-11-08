@@ -31,7 +31,11 @@ export async function guardRequest(route: Route, origin: string, blocked: () => 
 
   // route.continue だけでは redirect chain の後続 URL を検査できない。
   // 各応答を自動追従なしで取得し、Location を検証してからブラウザに返す。
-  const response = await route.fetch({ maxRedirects: 0 });
+  const response = await route.fetch({
+    maxRedirects: 0,
+    headers: await route.request().allHeaders(),
+  });
+  if (route.request().method() === "POST") console.log("E2E POST status", response.status());
   try {
     const location = response.headers().location;
     if (
