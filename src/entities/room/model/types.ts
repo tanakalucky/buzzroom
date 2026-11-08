@@ -26,7 +26,8 @@ export type QAProbe = {
   restoredAttachments: number;
   state: Snapshot;
 };
+export type RoomSound = "buzz" | "correct" | "wrong";
 export type ServerMessage =
   | QAProbe
-  | { type: "snapshot"; state: Snapshot; you: string }
+  | { type: "snapshot"; state: Snapshot; you: string; sound?: RoomSound }
   | { type: "error"; code: string; message: string };

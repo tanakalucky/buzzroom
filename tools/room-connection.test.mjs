@@ -209,8 +209,32 @@ test("BR-CONN/1: 送信失敗と不正受信は既存errorを示し排他と再�
   room.unmount();
 });
 
-function snapshot(revision) {
-  return { type: "snapshot", you: "participant", state: { revision } };
+test("BR-SOUND v2: 連続受理の音をrender前にも1回ずつ通知し復元・重複・古い通知は鳴らさない", () => {
+  const room = mountConnection();
+  const socket = room.sockets[0];
+  socket.message(snapshot(5, "buzz"));
+
+  socket.message(snapshot(6, "buzz"));
+  socket.message(snapshot(6, "buzz"));
+  socket.message(snapshot(7));
+  socket.message(snapshot(7, "wrong"));
+  socket.message(snapshot(6, "buzz"));
+  socket.message(snapshot(8, "correct"));
+
+  assert.deepEqual(room.sounds, ["buzz", "wrong", "correct"]);
+  room.flush();
+  assert.equal(room.value.state.revision, 8);
+  socket.close(1006);
+  room.retry();
+  room.sockets[1].message(snapshot(10, "wrong"));
+  assert.deepEqual(room.sounds, ["buzz", "wrong", "correct"]);
+  room.sockets[1].message(snapshot(11, "buzz"));
+  assert.deepEqual(room.sounds, ["buzz", "wrong", "correct", "buzz"]);
+  room.unmount();
+});
+
+function snapshot(revision, sound) {
+  return { type: "snapshot", you: "participant", state: { revision }, ...(sound ? { sound } : {}) };
 }
 
 // このhookのstate/ref/effectだけを制御し、再render前の連打とtimer境界を観測する。
@@ -218,6 +242,7 @@ function mountConnection() {
   const slots = [];
   const effects = [];
   const sockets = [];
+  const sounds = [];
   const timers = new Map();
   let cursor = 0;
   let dirty = false;
@@ -306,7 +331,7 @@ function mountConnection() {
     do {
       dirty = false;
       cursor = 0;
-      value = hook(roomId);
+      value = hook(roomId, (sound) => sounds.push(sound));
       while (effects.length) effects.shift()();
     } while (dirty);
   }
@@ -316,6 +341,7 @@ function mountConnection() {
       return value;
     },
     sockets,
+    sounds,
     timers,
     flush,
     nextDelay() {

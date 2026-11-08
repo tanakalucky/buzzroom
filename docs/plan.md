@@ -11,6 +11,7 @@ PR を小さく分割するための区切りと、それぞれの受け入れ�
 - [ ] D. room: 作成・参加・参加者一覧(パスワード・ニックネーム)を RoomDO + 単一 WebSocket のスナップショット配信 + UI まで一貫して実装(同一ブラウザでの参加者識別の再接続復元を含む)
 - [ ] E. buzzer: キュー・解答権(誤答ブロック・正解時の自動ラウンドリセット・host の手動リセット)と correctcount・wrongcount の自動加算を RoomDO への永続化 + UI まで一貫して実装(今ラウンドの誤答ブロック状態の再接続・hibernation 復元を含む)
 - [x] F. host による採点カウンタの手動編集、quizmaster 譲渡、quizmaster 切断時の復帰待ちを RoomDO + UI まで一貫して実装
+- [ ] G. 効果音: 受理した押下・正解・不正解の3音、端末ごとのオン・オフ、再接続時の過去音抑止、再生失敗時のゲーム継続。
 
 各スライスは「ブラウザ UI だけ」「サーバだけ」に分けず、該当する doc([requirements.md](requirements.md) の該当範囲・対応する `features/*.md`)の挙動をエンドツーエンドで満たす PR 単位にする。再接続・hibernation 後の状態復元の回帰確認は、独立したスライスにせず D・E それぞれの受け入れ確認に含める。
 
@@ -28,6 +29,9 @@ RoomDO・24時間固定Cookie・Server Actions・WebSocket・早押しと採点�
   テスト: キュー・解答権・ラウンドリセットの純粋関数テスト、correctcount/wrongcount の永続化とブロック状態の再接続・hibernation 復元を検証する DO テスト、複数クライアントでの押下順序と結果表示を検証するブラウザテスト。
 - **F**: host の編集操作で参加者の correctcount・wrongcount が即時に変わることを確認できる。quizmaster が参加者に役割を譲渡した後、新 quizmaster がボタンを押せず元 quizmaster が参加者としてボタンを押せること、quizmaster が切断しても自動で他の参加者に役割が移らず本人の復帰を待つことを確認できる。
   テスト: カウンタ手動編集・役割譲渡の純粋関数テスト、権威を持つ RoomDO 側での編集・譲渡・切断時の状態保持を検証する DO テスト、UI からの編集・譲渡操作を検証するブラウザテスト。
+
+- **G（BR-SOUND v2）**: 独立3画面で初期オフ・端末別オン、押下2件（待ち行列を含む）・正解・不正解の音、押下後のボタン非活性、オフ中・再接続・再読み込み時の過去音抑止、音声失敗後も早押しできることを確認する。
+  テスト: `tools/room-sound.test.mjs`（音の区別・オフ・再生失敗）、`tools/room-connection.test.mjs`（連続受信・重複・復元）、`tools/room-do.test.mjs`（受理時のみ通知）、`tools/e2e/sound.spec.ts`（3画面UIとWeb Audio呼び出し）。聴取による音色・音量の確認はブラウザ自動検証と区別する。
 
 ## 範囲外(現時点では着手しない)
 

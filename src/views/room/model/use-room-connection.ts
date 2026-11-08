@@ -1,8 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { RoomCommand, ServerMessage, Snapshot } from "../../../entities/room";
+import type { RoomCommand, RoomSound, ServerMessage, Snapshot } from "../../../entities/room";
 
-export function useRoomConnection(roomId: string) {
+export function useRoomConnection(roomId: string, onSound?: (sound: RoomSound) => void) {
+  const soundListener = useRef(onSound);
+  soundListener.current = onSound;
   const [state, setState] = useState<Snapshot>();
   const [you, setYou] = useState("");
   const [connection, setConnection] = useState<"connecting" | "online" | "offline" | "expired">(
@@ -19,17 +21,37 @@ export function useRoomConnection(roomId: string) {
     function connect() {
       if (disposed) return;
       setConnection(attempt ? "offline" : "connecting");
+      let initialRevision: number | undefined;
+      let latestRevision = -1;
+      let soundRevision = -1;
       const ws = new WebSocket(
         `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/room/${roomId}/socket`,
       );
       socket.current = ws;
       ws.onmessage = (event) => {
-        if (disposed) return;
+        if (disposed || socket.current !== ws) return;
         try {
           const message: ServerMessage = JSON.parse(event.data);
           sending.current = false;
           setPending(false);
           if (message.type === "snapshot") {
+            const revision = message.state.revision;
+            // 最初のsnapshotは復元の基準。音の履歴は持たず、接続中の新しい受理だけ通知する。
+            initialRevision ??= revision;
+            if (
+              message.sound &&
+              revision > initialRevision &&
+              revision >= latestRevision &&
+              revision > soundRevision
+            ) {
+              soundRevision = revision;
+              try {
+                soundListener.current?.(message.sound);
+              } catch {
+                // 音声の失敗でゲームの同期を止めない。
+              }
+            }
+            latestRevision = Math.max(latestRevision, revision);
             attempt = 0;
             setConnection("online");
             setYou(message.you);

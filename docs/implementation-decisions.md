@@ -24,6 +24,14 @@ FSDのpages層は`src/views`とする。`src/pages`はvinextのPages Router予�
 
 `src/features/room/server/`はバックエンド境界として配置を維持する。認証・Cookie・Origin検証・SQL・binding・Worker入口とCloudflare設定は維持し、純粋ルールと型のimportだけをentity公開APIへ向ける。作成・入室のServer Actionsは`src/app/`から画面へaction propで渡す。ルームルートではparams、ID、部屋の存在、Cookie、セッションの順にSSR検証する。エラー画面のclient境界、DOM・文言・CSS・操作は維持する。
 
+## 効果音の配置と同期
+
+効果音はこのルーム画面に閉じるため、再生処理を`views/room/model/room-sound.ts`、Reactとの接続を同じmodelの`use-room-sound.ts`、操作UIを既存`RoomScreen`に置く。`use-room-connection.ts`が受信時に音を通知し、renderの集約で連続した受理を落とさない。別スライスや公開APIは追加せず、音の型だけ既存`entities/room/index.ts`で公開する。
+
+RoomDOは保存後のsnapshotに受理した音種別を任意で付け、既存の単一WebSocketで送る。音は保存状態に含めず、接続・再接続時のsnapshotには付けない。クライアントは接続ごとの最初のrevisionを復元基準とし、新しい受理だけを通知する。同revisionの通常snapshotが先に届いても未通知の音は受け、重複音・古いrevisionは破棄する。
+
+Web Audioで3種類の短い電子音を合成し、追加の音源取得や依存ライブラリは不要とする。各端末の明示操作内でAudioContextを開始し、初期オフ・画面終了時の解放・再生失敗時の案内を行う。音声処理の失敗は状態同期やコマンド処理へ伝播させない。
+
 ## 承認済みのセッション
 
 - Cookieはルーム単位のHttpOnly、SameSite=Strict、ルーム配下のPath。本番HTTPSではSecure。localhostのHTTPだけ開発用にSecureを付けない。

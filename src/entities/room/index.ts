@@ -9,6 +9,7 @@ export type {
   RoomState,
   Snapshot,
   RoomCommand,
+  RoomSound,
   QAProbe,
   ServerMessage,
 } from "./model/types.ts";
