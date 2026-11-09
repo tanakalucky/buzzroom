@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Locator } from "@playwright/test";
 import { createAppContext, closeAppContexts } from "./origin-guard";
 
 const buzz = "quiz-button02-1.mp3";
@@ -158,6 +158,7 @@ test("BR-SOUND-FILES/1: 読込中の取消で試聴を止め、次のオンだ�
   const page = await context.newPage();
   await observeAudio(page);
   let release!: () => void;
+  let routeCompleted = false;
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
@@ -169,11 +170,14 @@ test("BR-SOUND-FILES/1: 読込中の取消で試聴を止め、次のオンだ�
     await page.route(asset, async (route) => {
       await held;
       await route.continue();
+      routeCompleted = true;
     });
     await page.getByRole("button", { name: "音をオン", exact: true }).click();
     await expect.poll(async () => (await audioState(page)).requests.length).toBe(3);
     await page.getByRole("button", { name: "音の準備を中止", exact: true }).click();
     release();
+    // 取消済みの要求を処理中に interception を解除すると route が二重処理になる。
+    await expect.poll(() => routeCompleted).toBe(true);
     await page.unroute(asset);
     await expect(page.getByRole("button", { name: "音をオン", exact: true })).toBeVisible();
     expect(await notes(page)).toEqual([]);
@@ -214,10 +218,15 @@ async function checkCredits(page: Page) {
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
       true,
     );
-    await page.keyboard.press("Shift+Tab");
-    await expect(dialog.getByRole("button", { name: "ルームに戻る" })).toBeFocused();
-    await page.keyboard.press("Tab");
+    // showModal の背後は inert。明示的な focus でも背景へ移れないことを確かめる。
+    await trigger.evaluate((element) => element.focus());
     await expect(close).toBeFocused();
+    await crossDialogBoundary(
+      page,
+      "Shift+Tab",
+      dialog.getByRole("button", { name: "ルームに戻る" }),
+    );
+    await crossDialogBoundary(page, "Tab", close);
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
     await expect(trigger).toBeFocused();
@@ -227,6 +236,17 @@ async function checkCredits(page: Page) {
     await expect(trigger).toBeFocused();
   }
   await page.setViewportSize({ width: 1280, height: 900 });
+}
+
+async function crossDialogBoundary(page: Page, key: string, target: Locator) {
+  await page.keyboard.press(key);
+  // native dialog は端でブラウザの UI にフォーカスを渡す場合がある。
+  // 背景の要素へ漏れた場合は許容せず、ページ外の場合だけもう一度進める。
+  const outsidePage = await page.evaluate(
+    () => document.activeElement === document.body && !document.hasFocus(),
+  );
+  if (outsidePage) await page.keyboard.press(key);
+  await expect(target).toBeFocused();
 }
 
 async function enter(page: Page, name: string, button: string) {
