@@ -1,0 +1,235 @@
+.sound-credit-footer {
+  padding: 4px 22px;
+  background: #f8f9fd;
+  border-top: 1px solid #e0e5f1;
+}
+.sound-credit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 44px;
+  color: #52627f;
+  font-size: 12px;
+}
+.sound-credit a,
+.sound-credit-dialog a {
+  color: #465d94;
+  text-underline-offset: 4px;
+}
+.sound-credit a:focus-visible,
+.sound-credit button:focus-visible,
+.sound-credit-dialog a:focus-visible,
+.sound-credit-dialog button:focus-visible {
+  outline: 3px solid #315ad3;
+  outline-offset: 3px;
+}
+.sound-credit-icon {
+  font-size: 17px;
+  color: #647493;
+}
+.sound-credit-divider {
+  color: #b0bad0;
+}
+.sound-credit-details {
+  margin-left: auto;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  padding: 10px 0 10px 14px;
+  color: #465d94;
+  font-size: 12px;
+  font-weight: 500;
+}
+.sound-credit-dialog {
+  margin: auto;
+  border: 1px solid #dce2f1;
+  border-radius: 18px;
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 26px;
+  overflow: auto;
+  color: #263656;
+  box-shadow: 0 24px 80px #13224c40;
+}
+.sound-credit-dialog::backdrop {
+  background: #17264d72;
+  backdrop-filter: blur(3px);
+}
+.sound-credit-dialog-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sound-credit-eyebrow {
+  color: #6477a4;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+.sound-credit-dialog-top button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: #f3f5fb;
+  font-size: 23px;
+}
+.sound-credit-dialog h2 {
+  margin-top: 3px;
+  font-size: 25px;
+}
+.sound-credit-lead {
+  margin: 10px 0 22px;
+  color: #627293;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.sound-credit-provider {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid #dce3f6;
+  border-radius: 11px;
+  padding: 17px 14px;
+  background: #f7f9ff;
+}
+.sound-credit-provider-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #e7edff;
+  color: #315ad3;
+  font-size: 24px;
+}
+.sound-credit-provider p {
+  margin-bottom: 4px;
+  color: #627293;
+  font-size: 10px;
+}
+.sound-credit-provider > div > a {
+  color: #263656;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.sound-credit-license {
+  margin-left: auto;
+  border: 1px solid #cbd6f1;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 10px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sound-credit-dialog h3 {
+  margin: 25px 0 5px;
+  color: #627293;
+  font-size: 12px;
+}
+.sound-credit-materials {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sound-credit-materials li {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e4e8f2;
+}
+.sound-credit-materials li > span {
+  flex: 0 0 31px;
+  text-align: center;
+  color: #516da7;
+  font-size: 22px;
+}
+.sound-credit-materials li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sound-credit-materials small {
+  display: block;
+  margin-bottom: 4px;
+  color: #627293;
+  font-size: 10px;
+}
+.sound-credit-materials strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.sound-credit-source {
+  margin: 15px 0 23px;
+  font-size: 11px;
+}
+.sound-credit-changes {
+  padding: 14px;
+  border-radius: 9px;
+  background: #f4f6fc;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.sound-credit-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 16px;
+  font-size: 10px;
+}
+.sound-credit-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+}
+.sound-credit-close {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 18px;
+  border-color: #303f79;
+  background: #303f79;
+  color: white;
+  font-size: 13px;
+}
+@media (max-width: 650px) {
+  .sound-credit-footer {
+    padding: 3px 14px;
+  }
+  .sound-credit {
+    gap: 7px;
+    min-height: 46px;
+    font-size: 11px;
+  }
+  .sound-credit-details {
+    padding-left: 7px;
+    font-size: 11px;
+  }
+  .sound-credit-dialog {
+    padding: 20px;
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .sound-credit-dialog h2 {
+    font-size: 23px;
+  }
+  .sound-credit-provider {
+    padding: 14px 11px;
+    gap: 9px;
+  }
+  .sound-credit-provider-icon {
+    width: 35px;
+    height: 35px;
+  }
+  .sound-credit-provider > div > a {
+    font-size: 17px;
+  }
+  .sound-credit-license {
+    padding: 7px;
+    font-size: 9px;
+  }
+  .sound-credit-lead {
+    margin-bottom: 17px;
+  }
+}

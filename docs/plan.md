@@ -33,6 +33,8 @@ RoomDO・24時間固定Cookie・Server Actions・WebSocket・早押しと採点�
 - **G（BR-SOUND v2）**: 独立3画面で初期オフ・端末別オン、押下2件（待ち行列を含む）・正解・不正解の音、押下後のボタン非活性、オフ中・再接続・再読み込み時の過去音抑止、音声失敗後も早押しできることを確認する。
   テスト: `tools/room-sound.test.mjs`（音の区別・オフ・再生失敗）、`tools/room-connection.test.mjs`（連続受信・重複・復元）、`tools/room-do.test.mjs`（受理時のみ通知）、`tools/e2e/sound.spec.ts`（3画面UIとWeb Audio呼び出し）。聴取による音色・音量の確認はブラウザ自動検証と区別する。
 
+- **BR-SOUND-FILES/2**: OtoLogicの02-1素材3音を未改変で同梱し、オン・再オン・失敗後の再試行を無音とし、サーバー受理時だけ鳴らす。その他の受理・無音条件を維持する。`tools/room-sound.test.mjs`で素材の同一性、事前取得・decode、取消との競合、失敗・再試行、停止・解放を検証する。`tools/e2e/sound.spec.ts`で実MP3の取得・decode、3画面の受理音、初期オフ・復帰・再生/取得/decode失敗後のゲーム継続、クレジットの表示・キーボード操作・320/390px幅を確認する。本人のPreview試聴による聞きやすさ確認は自動検証と区別する。
+
 ## 範囲外(現時点では着手しない)
 
 [requirements.md](requirements.md) の非目標を参照。ルームの有効期限・参加人数上限は未決定の将来課題であり、上記スライスには含めない。
