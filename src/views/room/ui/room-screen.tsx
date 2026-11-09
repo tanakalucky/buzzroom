@@ -307,10 +307,10 @@ export function RoomScreen({ roomId }: { roomId: string }) {
               {online ? "● 接続中" : "Ⅱ 接続待ち"} · 早押しはサーバーで受信した順に確定します。
             </footer>
             <SoundCredit />
-            {!isHost && <BuzzerButton status={buzzerStatus} onPress={press} />}
           </>
         )}
       </section>
+      {state && !isHost && <BuzzerButton status={buzzerStatus} onPress={press} />}
       <dialog ref={dialog} className="name-dialog" aria-labelledby="detail-title">
         <h2 id="detail-title">名前とスコア</h2>
         {detail && (

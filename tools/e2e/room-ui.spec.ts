@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { createAppContext, closeAppContexts } from "./origin-guard";
 
 test("初期化前の操作を防ぎ、入力保持・URLコピー・入室後の入力中非表示を維持する", async ({
@@ -104,3 +104,82 @@ test("初期化前の操作を防ぎ、入力保持・URLコピー・入室後�
     await closeAppContexts([hostContext, participantContext]);
   }
 });
+
+test("BR-FOOTER/1: 参加者のフッターを枠末尾に置き、固定ボタンに隠さない", async ({
+  browser,
+  baseURL,
+}) => {
+  const contexts = await Promise.all([0, 1].map(() => createAppContext(browser, baseURL)));
+  const [host, participant] = await Promise.all(contexts.map((context) => context.newPage()));
+
+  try {
+    await host.setViewportSize({ width: 1180, height: 757 });
+    await host.goto("/");
+    await host.getByLabel("あなたの名前", { exact: false }).fill("配置検証司会");
+    await host.getByLabel("パスワード", { exact: false }).fill("footer-test-password");
+    await host.getByRole("button", { name: "ルームをつくる", exact: false }).click();
+    await expect(host.getByRole("heading", { name: "出題者の操作" })).toBeVisible();
+    await participant.goto(host.url());
+    await participant.getByLabel("あなたの名前", { exact: false }).fill("配置検証参加者");
+    await participant.getByLabel("パスワード", { exact: false }).fill("footer-test-password");
+    await participant.getByRole("button", { name: "入室する", exact: false }).click();
+    const buzzer = participant.getByRole("button", { name: /早押し！/ });
+    await expect(buzzer).toBeEnabled();
+
+    for (const width of [1180, 320, 390, 1180]) {
+      await participant.setViewportSize({ width, height: width === 1180 ? 757 : 844 });
+      await participant.evaluate(() => window.scrollTo(0, 0));
+      await participant.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await expect(buzzer).toBeInViewport();
+      await expectFooterAtFrameEnd(participant);
+      await expect
+        .poll(() =>
+          participant.evaluate(() => {
+            const credit = document.querySelector(".sound-credit-footer")!.getBoundingClientRect();
+            const dock = document.querySelector(".buzzer-dock")!.getBoundingClientRect();
+            return credit.bottom <= dock.top;
+          }),
+        )
+        .toBe(true);
+      expect(
+        await participant.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      ).toBe(true);
+    }
+    await expectFooterAtFrameEnd(host);
+    await expect(host.locator(".buzzer-dock")).toHaveCount(0);
+    expect(
+      await host.locator(".room-shell").evaluate((shell) => shell.nextElementSibling?.tagName),
+    ).toBe("DIALOG");
+
+    await participant.evaluate(() => {
+      navigator.clipboard.writeText = async () => {
+        throw new Error("テスト用のコピー拒否");
+      };
+    });
+    await participant.getByRole("button", { name: "URLをコピー", exact: true }).click();
+    await participant.getByRole("textbox", { name: "ルームURL", exact: true }).focus();
+    await expect(buzzer).toBeHidden();
+    await expectFooterAtFrameEnd(participant);
+    await participant.getByRole("heading", { name: "早押しルーム", exact: true }).click();
+    await expect(buzzer).toBeVisible();
+    await participant.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expectFooterAtFrameEnd(participant);
+    await buzzer.click();
+    await expect(host.getByText("配置検証参加者さんに回答権があります")).toBeVisible();
+  } finally {
+    await closeAppContexts(contexts);
+  }
+});
+
+async function expectFooterAtFrameEnd(page: Page) {
+  await expect(page.locator(".room-footer")).toContainText("接続中");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const shell = document.querySelector(".room-shell")!.getBoundingClientRect();
+        const credit = document.querySelector(".sound-credit-footer")!.getBoundingClientRect();
+        return Math.abs(shell.bottom - credit.bottom);
+      }),
+    )
+    .toBeLessThanOrEqual(2);
+}
