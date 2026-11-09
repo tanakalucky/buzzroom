@@ -5,7 +5,7 @@ const buzz = "quiz-button02-1.mp3";
 const correct = "quiz-pingpong02-1.mp3";
 const wrong = "quiz-buzzer02-1.mp3";
 
-test("BR-SOUND-FILES/1: 3画面で実素材を事前decodeし、受理ごとの再生・無音・復帰を維持する", async ({
+test("BR-SOUND-FILES/2: 3画面で実素材を事前decodeし、受理ごとの再生・無音・復帰を維持する", async ({
   browser,
   baseURL,
 }) => {
@@ -36,7 +36,7 @@ test("BR-SOUND-FILES/1: 3画面で実素材を事前decodeし、受理ごとの�
         "aria-pressed",
         "true",
       );
-      await expect.poll(() => notes(page)).toEqual([buzz]);
+      expect(await notes(page)).toEqual([]);
       const audio = await audioState(page);
       expect(audio.requests.map((url) => new URL(url).origin)).toEqual(
         Array(3).fill(new URL(baseURL!).origin),
@@ -50,25 +50,25 @@ test("BR-SOUND-FILES/1: 3画面で実素材を事前decodeし、受理ごとの�
     await two.getByRole("button", { name: /早押し！/ }).click();
     await expect(two.getByRole("button", { name: /回答待ち/ })).toBeDisabled();
     await one.keyboard.press("Space");
-    for (const page of [host, one, two])
-      await expect.poll(() => notes(page)).toEqual([buzz, buzz, buzz]);
+    for (const page of [host, one, two]) await expect.poll(() => notes(page)).toEqual([buzz, buzz]);
 
     await host.getByRole("button", { name: "× 不正解", exact: true }).click();
     await expect(one.getByRole("button", { name: /このターンはお休み/ })).toBeDisabled();
     for (const page of [host, one, two])
-      await expect.poll(() => notes(page)).toEqual([buzz, buzz, buzz, wrong]);
+      await expect.poll(() => notes(page)).toEqual([buzz, buzz, wrong]);
     await host.getByRole("button", { name: "○ 正解", exact: true }).click();
     for (const page of [host, one, two]) {
-      await expect.poll(() => notes(page)).toEqual([buzz, buzz, buzz, wrong, correct]);
+      await expect.poll(() => notes(page)).toEqual([buzz, buzz, wrong, correct]);
       expect((await audioState(page)).requests).toHaveLength(3);
     }
 
     await one.getByRole("button", { name: "音をオフ", exact: true }).click();
     await one.getByRole("button", { name: /早押し！/ }).click();
-    await expect.poll(() => notes(host)).toEqual([buzz, buzz, buzz, wrong, correct, buzz]);
-    expect(await notes(one)).toEqual([buzz, buzz, buzz, wrong, correct]);
+    await expect.poll(() => notes(host)).toEqual([buzz, buzz, wrong, correct, buzz]);
+    expect(await notes(one)).toEqual([buzz, buzz, wrong, correct]);
     await one.getByRole("button", { name: "音をオン", exact: true }).click();
-    await expect.poll(() => notes(one)).toEqual([buzz, buzz, buzz, wrong, correct, buzz]);
+    await expect(one.getByRole("button", { name: "音をオフ", exact: true })).toBeVisible();
+    expect(await notes(one)).toEqual([buzz, buzz, wrong, correct]);
 
     // 送信せず切断し、音オンのまま復元snapshotを受けても過去音が増えないことを確認する。
     await host.evaluate(() => {
@@ -81,7 +81,7 @@ test("BR-SOUND-FILES/1: 3画面で実素材を事前decodeし、受理ごとの�
     await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
     await expect(host.getByText("再接続しています", { exact: true })).toBeVisible();
     await expect(host.getByText("● 接続中", { exact: false })).toBeVisible();
-    expect(await notes(host)).toEqual([buzz, buzz, buzz, wrong, correct, buzz]);
+    expect(await notes(host)).toEqual([buzz, buzz, wrong, correct, buzz]);
     await one.reload();
     await expect(one.getByRole("button", { name: "音をオン", exact: true })).toBeVisible();
     expect(await notes(one)).toEqual([]);
@@ -94,28 +94,33 @@ test("BR-SOUND-FILES/1: 3画面で実素材を事前decodeし、受理ごとの�
         true;
     });
     await two.getByRole("button", { name: "音をオン", exact: true }).click();
+    await expect(two.getByRole("button", { name: "音をオフ", exact: true })).toBeVisible();
+    expect(await notes(two)).toEqual(previous);
+    await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
+    for (const page of [host, one, two]) await expect(page.getByText(/ROUND 03/)).toBeVisible();
+    expect(await notes(host)).toEqual([buzz, buzz, wrong, correct, buzz]);
+    await two.getByRole("button", { name: /早押し！/ }).click();
+    await expect(host.getByText("音検証参加二さんに回答権があります")).toBeVisible();
     await expect(
       two.getByRole("status").filter({ hasText: "音を再生できませんでした" }),
     ).toBeVisible();
-    await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
-    for (const page of [host, one, two]) await expect(page.getByText(/ROUND 03/)).toBeVisible();
-    expect(await notes(host)).toEqual([buzz, buzz, buzz, wrong, correct, buzz]);
-    await two.getByRole("button", { name: /早押し！/ }).click();
-    await expect(host.getByText("音検証参加二さんに回答権があります")).toBeVisible();
     expect(await notes(two)).toEqual(previous);
     await two.evaluate(() => {
       (window as unknown as { audioObservation: AudioObservation }).audioObservation.failStart =
         false;
     });
     await two.getByRole("button", { name: "音をオン", exact: true }).click();
-    await expect.poll(() => notes(two)).toEqual([...previous, buzz]);
+    await expect(two.getByRole("button", { name: "音をオフ", exact: true })).toBeVisible();
+    expect(await notes(two)).toEqual(previous);
+    await host.getByRole("button", { name: "○ 正解", exact: true }).click();
+    await expect.poll(() => notes(two)).toEqual([...previous, correct]);
   } finally {
     await closeAppContexts(contexts);
   }
 });
 
 for (const failure of ["http", "decode"] as const) {
-  test(`BR-SOUND-FILES/1: ${failure}失敗後もリセットでき、音オンで実素材の再読込に成功する`, async ({
+  test(`BR-SOUND-FILES/2: ${failure}失敗後もリセットでき、音オンで実素材の再読込に成功する`, async ({
     browser,
     baseURL,
   }) => {
@@ -143,14 +148,15 @@ for (const failure of ["http", "decode"] as const) {
       await expect(page.getByText(/ROUND 02/)).toBeVisible();
       await page.unroute(asset);
       await page.getByRole("button", { name: "音をオン", exact: true }).click();
-      await expect.poll(() => notes(page)).toEqual([buzz]);
+      await expect(page.getByRole("button", { name: "音をオフ", exact: true })).toBeVisible();
+      expect(await notes(page)).toEqual([]);
     } finally {
       await closeAppContexts([context]);
     }
   });
 }
 
-test("BR-SOUND-FILES/1: 読込中の取消で試聴を止め、次のオンだけを有効にする", async ({
+test("BR-SOUND-FILES/2: 読込中の取消を維持し、次のオン完了も無音にする", async ({
   browser,
   baseURL,
 }) => {
@@ -182,7 +188,8 @@ test("BR-SOUND-FILES/1: 読込中の取消で試聴を止め、次のオンだ�
     await expect(page.getByRole("button", { name: "音をオン", exact: true })).toBeVisible();
     expect(await notes(page)).toEqual([]);
     await page.getByRole("button", { name: "音をオン", exact: true }).click();
-    await expect.poll(() => notes(page)).toEqual([buzz]);
+    await expect(page.getByRole("button", { name: "音をオフ", exact: true })).toBeVisible();
+    expect(await notes(page)).toEqual([]);
   } finally {
     release();
     await closeAppContexts([context]);

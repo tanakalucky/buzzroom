@@ -30,7 +30,7 @@ FSDのpages層は`src/views`とする。`src/pages`はvinextのPages Router予�
 
 RoomDOは保存後のsnapshotに受理した音種別を任意で付け、既存の単一WebSocketで送る。音は保存状態に含めず、接続・再接続時のsnapshotには付けない。クライアントは接続ごとの最初のrevisionを復元基準とし、新しい受理だけを通知する。同revisionの通常snapshotが先に届いても未通知の音は受け、重複音・古いrevisionは破棄する。
 
-OtoLogicの3素材を未改変のMP3として同梱し、各端末の明示操作内でAudioContextを開始する。同一originから事前取得・decodeしてAudioBufferSourceNodeで再生し、受理のたびに通信しない。初期オフ・読み込みの取消・画面終了時の解放・失敗時の再試行を扱い、音声処理の失敗は状態同期やコマンド処理へ伝播させない。クレジット表示と詳細dialogは同じroomスライスのuiに置く。素材と利用条件は [効果音仕様](features/buzzer.md#効果音) を参照する。
+OtoLogicの3素材を未改変のMP3として同梱し、各端末の明示操作内でAudioContextを開始する。同一originから事前取得・decodeしてAudioBufferSourceNodeで再生し、受理のたびに通信しない。オン・再オン・失敗後の再試行では再生せず、準備完了後のサーバー受理イベントでのみ鳴らす。初期オフ・読み込みの取消・画面終了時の解放・失敗時の再試行を扱い、音声処理の失敗は状態同期やコマンド処理へ伝播させない。クレジット表示と詳細dialogは同じroomスライスのuiに置く。素材と利用条件は [効果音仕様](features/buzzer.md#効果音) を参照する。
 
 ## 承認済みのセッション
 

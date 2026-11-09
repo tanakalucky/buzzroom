@@ -32,7 +32,6 @@ export function createRoomSound(
       loading = undefined;
       enabled = true;
       onStatus("on");
-      play("buzz");
     } catch {
       if (requested === generation) fail();
     }
