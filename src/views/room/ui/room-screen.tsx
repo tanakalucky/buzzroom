@@ -4,6 +4,7 @@ import { BuzzerButton, type BuzzerStatus } from "../../../features/buzz";
 import { ScoreEditor } from "../../../features/edit-score";
 import { useRoomConnection } from "../model/use-room-connection";
 import { useRoomSound } from "../model/use-room-sound";
+import { SoundCredit } from "./sound-credit";
 
 export function RoomScreen({ roomId }: { roomId: string }) {
   const sound = useRoomSound();
@@ -66,13 +67,14 @@ export function RoomScreen({ roomId }: { roomId: string }) {
             </span>
             <button
               aria-pressed={sound.status === "on"}
-              disabled={sound.status === "starting"}
-              onClick={sound.status === "on" ? sound.disable : sound.enable}
+              onClick={
+                sound.status === "on" || sound.status === "starting" ? sound.disable : sound.enable
+              }
             >
               {sound.status === "on"
                 ? "音をオフ"
                 : sound.status === "starting"
-                  ? "音を準備中"
+                  ? "音の準備を中止"
                   : "音をオン"}
             </button>
             <button onClick={copyUrl}>URLをコピー</button>
@@ -304,6 +306,7 @@ export function RoomScreen({ roomId }: { roomId: string }) {
             <footer className="room-footer">
               {online ? "● 接続中" : "Ⅱ 接続待ち"} · 早押しはサーバーで受信した順に確定します。
             </footer>
+            <SoundCredit />
             {!isHost && <BuzzerButton status={buzzerStatus} onPress={press} />}
           </>
         )}
