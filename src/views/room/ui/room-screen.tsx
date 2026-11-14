@@ -47,9 +47,11 @@ export function RoomScreen({ roomId }: { roomId: string }) {
         ? "locked"
         : state?.buzzer.queue[0] === you
           ? "answering"
-          : state?.buzzer.order.includes(you)
+          : state?.buzzer.queue.includes(you)
             ? "queued"
-            : "ready";
+            : state?.buzzer.order.includes(you)
+              ? "pressed"
+              : "ready";
   const press = useCallback(() => {
     if (state) send({ type: "buzz", round: state.buzzer.round });
   }, [state, send]);
@@ -199,7 +201,7 @@ export function RoomScreen({ roomId }: { roomId: string }) {
                               ? "× 誤答ロック"
                               : floor
                                 ? "● 回答権あり"
-                                : order >= 0
+                                : state.buzzer.queue.includes(p.id)
                                   ? "回答待ち"
                                   : "◎ 受付中"}
                           {!connected && " · 切断"}

@@ -3,11 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import "./buzzer-button.css";
 
-export type BuzzerStatus = "ready" | "sending" | "queued" | "answering" | "locked" | "disconnected";
+export type BuzzerStatus =
+  | "ready"
+  | "sending"
+  | "queued"
+  | "pressed"
+  | "answering"
+  | "locked"
+  | "disconnected";
 const labels: Record<BuzzerStatus, [string, string]> = {
   ready: ["早押し！", "タップ、または Space キー"],
   sending: ["押下を送信しています", "サーバーでの確定を待っています"],
   queued: ["回答待ち", "押下済みです。そのままお待ちください"],
+  pressed: ["押下済み", "正解・リセットで再び押せます"],
   answering: ["あなたに回答権があります", "出題者の判定をお待ちください"],
   locked: ["このターンはお休み", "正解・リセットで再び押せます"],
   disconnected: ["接続を確認しています", "復帰するまで早押しを一時停止します"],
