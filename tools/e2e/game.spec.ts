@@ -111,6 +111,94 @@ test("BR-UI v1: 独立した3画面で入室・早押し・採点・司会交代
   }
 });
 
+test("BR-26/1: 司会を往復してキューを外れた押下者は回答待ちにならず同ラウンドで再押下できない", async ({
+  browser,
+  baseURL,
+}) => {
+  const contexts = await Promise.all([0, 1, 2].map(() => createAppContext(browser, baseURL)));
+  const [host, one, two] = await Promise.all(contexts.map((context) => context.newPage()));
+
+  try {
+    await host.goto("/");
+    await enter(host, "往復司会", "queue-test-password", "ルームをつくる");
+    await expect(host.getByRole("heading", { name: "出題者の操作" })).toBeVisible();
+    for (const [page, name] of [
+      [one, "往復参加一"],
+      [two, "往復参加二"],
+    ] as const) {
+      await page.goto(host.url());
+      await enter(page, name, "queue-test-password", "入室する");
+    }
+    for (const page of [host, one, two]) await expect(page.getByRole("article")).toHaveCount(3);
+
+    await one.getByRole("button", { name: /早押し！/ }).click();
+    await expect(one.getByRole("button", { name: /あなたに回答権があります/ })).toBeDisabled();
+    await two.getByRole("button", { name: /早押し！/ }).click();
+    for (const page of [host, one, two]) {
+      await expect(card(page, "往復参加一")).toContainText("● 回答権あり");
+      await expect(card(page, "往復参加二")).toContainText("回答待ち");
+    }
+    await expect(two.getByRole("button", { name: /回答待ち/ })).toBeDisabled();
+
+    await host.getByLabel("出題者を交代").selectOption({ label: "往復参加一" });
+    await host.getByRole("button", { name: "交代する" }).click();
+    await expect(one.getByRole("heading", { name: "出題者の操作" })).toBeVisible();
+    await one.getByLabel("出題者を交代").selectOption({ label: "往復司会" });
+    await one.getByRole("button", { name: "交代する" }).click();
+    await expect(host.getByRole("heading", { name: "出題者の操作" })).toBeVisible();
+
+    for (const page of [host, one, two]) {
+      await expect(page.getByText(/ROUND 01/)).toBeVisible();
+      await expect(card(page, "往復参加一").getByLabel("押下順 1番")).toBeVisible();
+      await expect(card(page, "往復参加一").locator(".participant-status")).toHaveText("◎ 受付中");
+      await expect(card(page, "往復参加二")).toContainText("● 回答権あり");
+    }
+    await expect(one.getByRole("button", { name: /押下済み/ })).toBeDisabled();
+    await expect(one.getByRole("button", { name: /回答待ち/ })).toHaveCount(0);
+    await one.locator("h1").click();
+    await one.keyboard.press("Space");
+    for (const page of [host, one, two]) {
+      await expect(card(page, "往復参加一").locator(".participant-status")).toHaveText("◎ 受付中");
+      await expect(card(page, "往復参加一").getByLabel("押下順 1番")).toBeVisible();
+    }
+    await host.getByRole("button", { name: "× 不正解", exact: true }).click();
+    for (const page of [host, one, two]) {
+      await expect(card(page, "往復参加二").locator(".participant-status")).toHaveText(
+        "× 誤答ロック",
+      );
+      await expect(card(page, "往復参加二").getByLabel("押下順 2番")).toBeVisible();
+    }
+    await expect(two.getByRole("button", { name: /このターンはお休み/ })).toBeDisabled();
+
+    await host.getByRole("button", { name: "↻ リセット", exact: true }).click();
+    for (const page of [host, one, two]) {
+      await expect(page.getByText(/ROUND 02/)).toBeVisible();
+      await expect(page.getByLabel(/^押下順 /)).toHaveCount(0);
+      await expect(page.getByText("× 誤答ロック", { exact: true })).toHaveCount(0);
+    }
+    for (const page of [one, two])
+      await expect(page.getByRole("button", { name: /早押し！/ })).toBeEnabled();
+    await one.getByRole("button", { name: /早押し！/ }).click();
+    await expect(host.getByText("往復参加一さんに回答権があります")).toBeVisible();
+    await two.getByRole("button", { name: /早押し！/ }).click();
+    await host.getByRole("button", { name: "× 不正解", exact: true }).click();
+    await expect(one.getByRole("button", { name: /このターンはお休み/ })).toBeDisabled();
+    await expect(host.getByText("往復参加二さんに回答権があります")).toBeVisible();
+    await host.getByRole("button", { name: "○ 正解", exact: true }).click();
+    for (const page of [host, one, two]) {
+      await expect(page.getByText(/ROUND 03/)).toBeVisible();
+      await expect(page.getByLabel(/^押下順 /)).toHaveCount(0);
+      await expect(page.getByText("× 誤答ロック", { exact: true })).toHaveCount(0);
+    }
+    for (const page of [one, two])
+      await expect(page.getByRole("button", { name: /早押し！/ })).toBeEnabled();
+    await one.getByRole("button", { name: /早押し！/ }).click();
+    await expect(host.getByText("往復参加一さんに回答権があります")).toBeVisible();
+  } finally {
+    await closeAppContexts(contexts);
+  }
+});
+
 async function enter(page: Page, name: string, password: string, button: string) {
   await page.getByLabel("あなたの名前", { exact: false }).fill(name);
   await page.getByLabel("パスワード", { exact: false }).fill(password);
