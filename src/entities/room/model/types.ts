@@ -10,7 +10,7 @@ export type RoomState = {
   revision: number;
 };
 // 許可した公開項目だけ。パスワード・セッション・トークンのハッシュを含めない。
-export type Snapshot = RoomState & { onlineIds: string[] };
+export type Snapshot = RoomState & { onlineIds: string[]; allAnswerersLocked: boolean };
 export type RoomCommand =
   | { type: "buzz"; round: number }
   | { type: "judge"; round: number; targetId: string; correct: boolean }

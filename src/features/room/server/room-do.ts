@@ -124,7 +124,18 @@ export class RoomDO extends DurableObject {
       : undefined;
   }
   private snapshot(state: RoomState): Snapshot {
+    const answerers = this.ctx.storage.sql
+      .exec<{ participant_id: string }>(
+        "SELECT DISTINCT participant_id FROM sessions WHERE expires_at > ? AND participant_id != ?",
+        Date.now(),
+        state.hostId,
+      )
+      .toArray();
     return {
+      allAnswerersLocked:
+        state.buzzer.queue.length === 0 &&
+        answerers.length > 0 &&
+        answerers.every(({ participant_id }) => state.buzzer.blocked.includes(participant_id)),
       hostId: state.hostId,
       participants: state.participants.map((p) => ({
         id: p.id,
@@ -171,11 +182,16 @@ export class RoomDO extends DurableObject {
     }
   }
   private async scheduleExpiry() {
-    const expiry = this.ctx
-      .getWebSockets()
-      .map((ws) => (ws.deserializeAttachment() as Session | null)?.expiresAt ?? 0)
-      .filter((t) => t > Date.now());
-    if (expiry.length) await this.ctx.storage.setAlarm(Math.min(...expiry));
+    // 再接続可能な参加者はオフラインでも表示判定の対象。期限到達時に更新する。
+    const expiry = this.ctx.getWebSockets().length
+      ? this.ctx.storage.sql
+          .exec<{ expiry: number | null }>(
+            "SELECT MIN(expires_at) AS expiry FROM sessions WHERE expires_at > ?",
+            Date.now(),
+          )
+          .one().expiry
+      : null;
+    if (expiry !== null) await this.ctx.storage.setAlarm(expiry);
     else await this.ctx.storage.deleteAlarm();
   }
   async alarm() {

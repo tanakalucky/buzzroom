@@ -35,9 +35,7 @@ export function RoomScreen({ roomId }: { roomId: string }) {
   const detail = state?.participants.find((p) => p.id === detailId);
   const isHost = state?.hostId === you;
   const active = state?.participants.find((p) => p.id === state.buzzer.queue[0]);
-  const answerers = state?.participants.filter((p) => p.id !== state.hostId) ?? [];
-  const allLocked =
-    answerers.length > 0 && answerers.every((p) => state?.buzzer.blocked.includes(p.id));
+  const allLocked = state?.allAnswerersLocked;
   const online = connection === "online";
   const buzzerStatus: BuzzerStatus = !online
     ? "disconnected"
