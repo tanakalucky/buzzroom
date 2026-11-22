@@ -251,6 +251,22 @@ test(
       const storage = await mf.unsafeGetDurableObjectStorage("buzzroom", "RoomDO", {
         name: roomId,
       });
+      // 未ロックの a はオフラインでも期限内なので、まだ押せる。
+      assert.equal(persisted.state.allAnswerersLocked, false);
+      await storage.exec(
+        "UPDATE sessions SET expires_at=? WHERE hash=?",
+        Date.now() + 2000,
+        hashes[1],
+      );
+      // 接続時に a の期限を監視し、その後の操作なしでリセット待ちに変わる。
+      const observer = client(nextEndpoint, cookies[2]);
+      clients.push(observer);
+      const beforeExpiry = await observer.until((m) => m.type === "snapshot");
+      assert.equal(beforeExpiry.state.allAnswerersLocked, false);
+      const afterExpiry = await observer.until(
+        (m) => m.type === "snapshot" && m.state.allAnswerersLocked,
+      );
+      assert.deepEqual(afterExpiry.state.participants, persisted.state.participants);
       await storage.exec(
         "UPDATE sessions SET expires_at=? WHERE hash=?",
         Date.now() - 1,
