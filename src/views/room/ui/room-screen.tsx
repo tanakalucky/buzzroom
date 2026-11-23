@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BuzzerButton, type BuzzerStatus } from "../../../features/buzz";
+import { BuzzerButton } from "../../../features/buzz";
 import { ScoreEditor } from "../../../features/edit-score";
+import { getButtonStatus, getCardStatus, getParticipantBuzzer } from "../model/participant-buzzer";
 import { useRoomConnection } from "../model/use-room-connection";
 import { useRoomSound } from "../model/use-room-sound";
 import { SoundCredit } from "./sound-credit";
@@ -37,19 +38,6 @@ export function RoomScreen({ roomId }: { roomId: string }) {
   const active = state?.participants.find((p) => p.id === state.buzzer.queue[0]);
   const allLocked = state?.allAnswerersLocked;
   const online = connection === "online";
-  const buzzerStatus: BuzzerStatus = !online
-    ? "disconnected"
-    : pending
-      ? "sending"
-      : state?.buzzer.blocked.includes(you)
-        ? "locked"
-        : state?.buzzer.queue[0] === you
-          ? "answering"
-          : state?.buzzer.queue.includes(you)
-            ? "queued"
-            : state?.buzzer.order.includes(you)
-              ? "pressed"
-              : "ready";
   const press = useCallback(() => {
     if (state) send({ type: "buzz", round: state.buzzer.round });
   }, [state, send]);
@@ -162,19 +150,20 @@ export function RoomScreen({ roomId }: { roomId: string }) {
                 )}
                 <div className="participant-grid">
                   {state.participants.map((p) => {
-                    const order = state.buzzer.order.indexOf(p.id);
-                    const blocked = state.buzzer.blocked.includes(p.id);
-                    const floor = state.buzzer.queue[0] === p.id;
+                    const buzzer = getParticipantBuzzer(state.buzzer, p.id);
                     const connected = state.onlineIds.includes(p.id);
                     return (
                       <article
                         key={p.id}
                         aria-label={`${p.name}のカード`}
-                        className={`participant-card ${floor ? "has-floor" : ""} ${blocked ? "is-locked" : ""}`}
+                        className={`participant-card ${buzzer.hasFloor ? "has-floor" : ""} ${buzzer.blocked ? "is-locked" : ""}`}
                       >
-                        {order >= 0 && (
-                          <span className="order-badge" aria-label={`押下順 ${order + 1}番`}>
-                            {order + 1}
+                        {buzzer.pressOrder !== null && (
+                          <span
+                            className="order-badge"
+                            aria-label={`押下順 ${buzzer.pressOrder}番`}
+                          >
+                            {buzzer.pressOrder}
                           </span>
                         )}
                         <h3>
@@ -193,15 +182,7 @@ export function RoomScreen({ roomId }: { roomId: string }) {
                           </button>
                         </h3>
                         <p className="participant-status">
-                          {p.id === state.hostId
-                            ? "出題者"
-                            : blocked
-                              ? "× 誤答ロック"
-                              : floor
-                                ? "● 回答権あり"
-                                : state.buzzer.queue.includes(p.id)
-                                  ? "回答待ち"
-                                  : "◎ 受付中"}
+                          {getCardStatus(buzzer, p.id === state.hostId)}
                           {!connected && " · 切断"}
                         </p>
                         <div className="card-scores">
@@ -310,7 +291,12 @@ export function RoomScreen({ roomId }: { roomId: string }) {
           </>
         )}
       </section>
-      {state && !isHost && <BuzzerButton status={buzzerStatus} onPress={press} />}
+      {state && !isHost && (
+        <BuzzerButton
+          status={getButtonStatus(getParticipantBuzzer(state.buzzer, you), online, pending)}
+          onPress={press}
+        />
+      )}
       <dialog ref={dialog} className="name-dialog" aria-labelledby="detail-title">
         <h2 id="detail-title">名前とスコア</h2>
         {detail && (
